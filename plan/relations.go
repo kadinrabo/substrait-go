@@ -858,9 +858,22 @@ func (j *JoinRel) directOutputSchema() types.RecordType {
 		typeList = j.left.RecordType().Types()
 	case JoinTypeRightSemi, JoinTypeRightAnti:
 		return j.right.RecordType()
+	case JoinTypeLeftMark:
+		typeList = markedTypes(j.left.RecordType())
+	case JoinTypeRightMark:
+		typeList = markedTypes(j.right.RecordType())
 	}
 
 	return *types.NewRecordTypeFromTypes(typeList)
+}
+
+// markedTypes returns the fields of a mark join's marked side followed by the
+// mark column, which the spec defines as a nullable boolean appended after all
+// columns of that side.
+func markedTypes(marked types.RecordType) []types.Type {
+	typeList := make([]types.Type, 0, marked.FieldCount()+1)
+	typeList = append(typeList, marked.Types()...)
+	return append(typeList, &types.BooleanType{Nullability: types.NullabilityNullable})
 }
 
 func (j *JoinRel) RecordType() types.RecordType {

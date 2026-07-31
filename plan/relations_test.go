@@ -709,6 +709,40 @@ func TestRightJoinRecordType(t *testing.T) {
 	}
 }
 
+func TestMarkJoinRecordType(t *testing.T) {
+	left := &fakeRel{outputType: *types.NewRecordTypeFromTypes(
+		[]types.Type{&types.Int64Type{Nullability: types.NullabilityRequired}})}
+	right := &fakeRel{outputType: *types.NewRecordTypeFromTypes(
+		[]types.Type{&types.StringType{Nullability: types.NullabilityRequired}})}
+	mark := &types.BooleanType{Nullability: types.NullabilityNullable}
+
+	tests := []struct {
+		name     string
+		joinType JoinType
+		expected types.RecordType
+	}{
+		{"left mark", JoinTypeLeftMark, *types.NewRecordTypeFromTypes([]types.Type{
+			&types.Int64Type{Nullability: types.NullabilityRequired}, mark,
+		})},
+		{"right mark", JoinTypeRightMark, *types.NewRecordTypeFromTypes([]types.Type{
+			&types.StringType{Nullability: types.NullabilityRequired}, mark,
+		})},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rel := &JoinRel{left: left, right: right, joinType: tt.joinType}
+			assert.Equal(t, tt.expected, rel.RecordType())
+			assert.True(t, isRecordTypeSupported(rel))
+		})
+	}
+
+	// The marked side's own field list must not be appended to in place.
+	rel := &JoinRel{left: left, right: right, joinType: JoinTypeLeftMark}
+	require.Equal(t, int32(2), rel.RecordType().FieldCount())
+	assert.Equal(t, int32(1), left.RecordType().FieldCount())
+}
+
 func TestExtensionSingleRecordType(t *testing.T) {
 	var rel ExtensionSingleRel
 	rel.input = &fakeRel{outputType: *types.NewRecordTypeFromTypes(

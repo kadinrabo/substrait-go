@@ -792,6 +792,8 @@ func TestJoinRelOutputRecordTypes(t *testing.T) {
 		{"JOIN_TYPE_RIGHT", plan.JoinTypeRight, []string{"a", "b", "c", "d"}, "NSTRUCT<a: string?, b: fp32?, c: i32, d: boolean>"},
 		{"JOIN_TYPE_LEFT_ANTI", plan.JoinTypeLeftAnti, []string{"a", "b"}, "NSTRUCT<a: string, b: fp32>"},
 		{"JOIN_TYPE_LEFT_SINGLE", plan.JoinTypeLeftSingle, []string{"a", "b", "c", "d"}, "NSTRUCT<a: string, b: fp32, c: i32?, d: boolean?>"},
+		{"JOIN_TYPE_LEFT_MARK", plan.JoinTypeLeftMark, []string{"a", "b", "mark"}, "NSTRUCT<a: string, b: fp32, mark: boolean?>"},
+		{"JOIN_TYPE_RIGHT_MARK", plan.JoinTypeRightMark, []string{"c", "d", "mark"}, "NSTRUCT<c: i32, d: boolean, mark: boolean?>"},
 	}
 
 	for _, tt := range tests {
