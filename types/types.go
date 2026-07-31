@@ -724,12 +724,10 @@ func TypeToProto(t Type) *proto.Type {
 				Nullability:            t.Nullability,
 				TypeVariationReference: t.TypeVariationRef}}}
 	case IntervalCompoundType:
-		precision := t.precision.ToProtoVal()
-		return &proto.Type{Kind: &proto.Type_IntervalCompound_{
-			IntervalCompound: &proto.Type_IntervalCompound{
-				Precision:              precision,
-				Nullability:            t.nullability,
-				TypeVariationReference: t.typeVariationRef}}}
+		return t.ToProto()
+	case *IntervalCompoundType:
+		// TypeFromProto hands back the pointer form, so both spellings must be handled.
+		return t.ToProto()
 	case *UUIDType:
 		return &proto.Type{Kind: &proto.Type_Uuid{
 			Uuid: &proto.Type_UUID{

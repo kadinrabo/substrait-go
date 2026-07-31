@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 	"google.golang.org/protobuf/testing/protocmp"
 )
@@ -32,6 +33,32 @@ func TestNewIntervalCompoundType(t *testing.T) {
 			assert.Equal(t, fmt.Sprintf("interval_compound%s", expectedFormatString), createdIntervalCompoundType.String())
 			assert.Equal(t, "icompound", createdIntervalCompoundType.ShortString())
 			assertIntervalCompoundTypeProto(t, precision, nullability, createdIntervalCompoundType)
+		}
+	}
+}
+
+// TestIntervalCompoundTypeProtoRoundtrip covers the TypeFromProto -> TypeToProto
+// direction. TypeFromProto returns *IntervalCompoundType, so TypeToProto has to
+// accept the pointer spelling as well as the value one.
+func TestIntervalCompoundTypeProtoRoundtrip(t *testing.T) {
+	for _, nullability := range []Nullability{NullabilityRequired, NullabilityNullable} {
+		for _, precision := range []TimePrecision{PrecisionSeconds, PrecisionMilliSeconds, PrecisionNanoSeconds} {
+			t.Run(fmt.Sprintf("%v/%v", nullability, precision.ToProtoVal()), func(t *testing.T) {
+				input := &proto.Type{Kind: &proto.Type_IntervalCompound_{
+					IntervalCompound: &proto.Type_IntervalCompound{
+						Precision:              precision.ToProtoVal(),
+						Nullability:            nullability,
+						TypeVariationReference: 3,
+					},
+				}}
+
+				fromProto := TypeFromProto(input)
+				require.IsType(t, &IntervalCompoundType{}, fromProto)
+
+				if diff := cmp.Diff(input, TypeToProto(fromProto), protocmp.Transform()); diff != "" {
+					t.Errorf("interval_compound proto roundtrip didn't match, diff:\n%v", diff)
+				}
+			})
 		}
 	}
 }
