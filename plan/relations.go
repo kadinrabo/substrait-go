@@ -806,6 +806,12 @@ const (
 	JoinTypeRightSemi   = proto.JoinRel_JOIN_TYPE_RIGHT_SEMI
 	JoinTypeRightAnti   = proto.JoinRel_JOIN_TYPE_RIGHT_ANTI
 	JoinTypeRightSingle = proto.JoinRel_JOIN_TYPE_RIGHT_SINGLE
+	// JoinTypeLeftMark returns one record for each record from the left input,
+	// with an extra boolean field carrying whether there was a match on the right.
+	JoinTypeLeftMark = proto.JoinRel_JOIN_TYPE_LEFT_MARK
+	// JoinTypeRightMark returns one record for each record from the right input,
+	// with an extra boolean field carrying whether there was a match on the left.
+	JoinTypeRightMark = proto.JoinRel_JOIN_TYPE_RIGHT_MARK
 )
 
 // JoinRel is a binary Join relational operator representing left-join-right,
@@ -1494,6 +1500,14 @@ const (
 	SetOpIntersectionMultiset = proto.SetRel_SET_OP_INTERSECTION_MULTISET
 	SetOpUnionDistinct        = proto.SetRel_SET_OP_UNION_DISTINCT
 	SetOpUnionAll             = proto.SetRel_SET_OP_UNION_ALL
+	// SetOpMinusPrimaryAll is MINUS_PRIMARY keeping duplicates, so each
+	// occurrence of a record in a secondary input removes one occurrence of
+	// that record from the primary input rather than all of them.
+	SetOpMinusPrimaryAll = proto.SetRel_SET_OP_MINUS_PRIMARY_ALL
+	// SetOpIntersectionMultisetAll is INTERSECTION_MULTISET keeping duplicates,
+	// so a record appears as many times as it appears in the input that holds
+	// the fewest copies of it.
+	SetOpIntersectionMultisetAll = proto.SetRel_SET_OP_INTERSECTION_MULTISET_ALL
 )
 
 // SetRel represents the relational set operators (intersection, union, etc.)

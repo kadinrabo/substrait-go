@@ -1629,6 +1629,40 @@ func TestSetRelations(t *testing.T) {
 	checkRoundTrip(t, expectedJSON, p)
 }
 
+// TestSetOpAllVariantsRoundTrip covers the duplicate-preserving set operations,
+// which the spec defines out of numeric order (7 and 8) after the others.
+func TestSetOpAllVariantsRoundTrip(t *testing.T) {
+	for _, tt := range []struct {
+		op     plan.SetOp
+		opJSON string
+	}{
+		{plan.SetOpMinusPrimaryAll, "SET_OP_MINUS_PRIMARY_ALL"},
+		{plan.SetOpIntersectionMultisetAll, "SET_OP_INTERSECTION_MULTISET_ALL"},
+	} {
+		t.Run(tt.opJSON, func(t *testing.T) {
+			b := plan.NewBuilderDefault()
+			set, err := b.Set(tt.op,
+				b.NamedScan([]string{"test"}, baseSchema),
+				b.NamedScan([]string{"test2"}, baseSchema))
+			require.NoError(t, err)
+
+			p, err := b.Plan(set, []string{"a", "b"})
+			require.NoError(t, err)
+
+			protoPlan, err := p.ToProto()
+			require.NoError(t, err)
+			assert.Equal(t, tt.opJSON, protoPlan.Relations[0].GetRoot().GetInput().GetSet().GetOp().String())
+
+			roundTrip, err := plan.FromProto(protoPlan, extensions.GetDefaultCollectionWithNoError())
+			require.NoError(t, err)
+			gotSet, ok := roundTrip.GetRoots()[0].Input().(*plan.SetRel)
+			require.True(t, ok)
+			assert.Equal(t, tt.op, gotSet.Op())
+			assert.Equal(t, "NSTRUCT<a: string, b: fp32>", roundTrip.GetRoots()[0].RecordType().String())
+		})
+	}
+}
+
 func TestColumnlessVirtualTable(t *testing.T) {
 	const expectedJSON = `{
 		` + versionStruct + `,

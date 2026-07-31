@@ -655,6 +655,32 @@ func TestProjectRecordType(t *testing.T) {
 	assert.Equal(t, expected, result)
 }
 
+// TestComputationTypeHint checks that the ComputationType constants have the
+// type the saved and loaded computation hints expect, and survive a common
+// round trip. Hints are read-only for consumers, so a plan carrying them is the
+// only way to reach these values.
+func TestComputationTypeHint(t *testing.T) {
+	hint := &Hint{
+		SavedComputations: []*proto.RelCommon_Hint_SavedComputation{
+			{ComputationId: 1, Type: ComputationTypeHashtable},
+		},
+		LoadedComputations: []*proto.RelCommon_Hint_LoadedComputation{
+			{ComputationIdReference: 1, Type: ComputationTypeBloomFilter},
+		},
+	}
+
+	var rc RelCommon
+	rc.fromProtoCommon(&proto.RelCommon{
+		Hint:     hint,
+		EmitKind: &proto.RelCommon_Direct_{Direct: &proto.RelCommon_Direct{}},
+	})
+
+	got := rc.toProto().GetHint()
+	require.NotNil(t, got)
+	assert.Equal(t, ComputationTypeHashtable, got.GetSavedComputations()[0].GetType())
+	assert.Equal(t, ComputationTypeBloomFilter, got.GetLoadedComputations()[0].GetType())
+}
+
 func TestRightJoinRecordType(t *testing.T) {
 	left := &fakeRel{outputType: *types.NewRecordTypeFromTypes(
 		[]types.Type{&types.Int64Type{Nullability: types.NullabilityRequired}})}

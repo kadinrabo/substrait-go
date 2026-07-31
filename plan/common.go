@@ -123,6 +123,20 @@ type (
 	RuntimeConstraint = proto.RelCommon_Hint_RuntimeConstraint
 )
 
+// ComputationType is the kind of data structure a saved or loaded computation
+// hint refers to.
+type ComputationType = proto.RelCommon_Hint_ComputationType
+
+const (
+	ComputationTypeUnspecified = proto.RelCommon_Hint_COMPUTATION_TYPE_UNSPECIFIED
+	ComputationTypeHashtable   = proto.RelCommon_Hint_COMPUTATION_TYPE_HASHTABLE
+	ComputationTypeBloomFilter = proto.RelCommon_Hint_COMPUTATION_TYPE_BLOOM_FILTER
+	// ComputationTypeUnknown is for computations whose data structure the
+	// producer does not want to describe. A plan may use it for every
+	// computation it declares.
+	ComputationTypeUnknown = proto.RelCommon_Hint_COMPUTATION_TYPE_UNKNOWN
+)
+
 // RelCommon is the common fields of all relational operators and is
 // embedded in all of them.
 type RelCommon struct {
