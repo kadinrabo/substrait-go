@@ -406,7 +406,7 @@ func (e *set) ToProto(c *Collection) ([]*extensions.SimpleExtensionURN, []*exten
 	sort.Slice(decls, func(i, j int) bool {
 		return decls[i].GetExtensionType().TypeAnchor < decls[j].GetExtensionType().TypeAnchor
 	})
-	typesCount := len(decls)
+	typeVariationsStart := len(decls)
 
 	for id, anchor := range e.typeVariations {
 		decls = append(decls, &extensions.SimpleExtensionDeclaration{
@@ -420,12 +420,16 @@ func (e *set) ToProto(c *Collection) ([]*extensions.SimpleExtensionURN, []*exten
 		})
 	}
 
-	typeDecls := decls[typesCount:]
-	sort.Slice(typeDecls, func(i, j int) bool {
-		return decls[i].GetExtensionTypeVariation().TypeVariationAnchor < decls[j].GetExtensionTypeVariation().TypeVariationAnchor
+	// Sort the type variation declarations by the anchor for consistent output.
+	// The comparator must index the sub-slice, not decls, because i and j are
+	// offsets into the sub-slice.
+	typeVariationDecls := decls[typeVariationsStart:]
+	sort.Slice(typeVariationDecls, func(i, j int) bool {
+		return typeVariationDecls[i].GetExtensionTypeVariation().TypeVariationAnchor <
+			typeVariationDecls[j].GetExtensionTypeVariation().TypeVariationAnchor
 	})
 
-	typeVarCount := len(decls)
+	funcsStart := len(decls)
 	for id, anchor := range e.funcs {
 		decls = append(decls, &extensions.SimpleExtensionDeclaration{
 			MappingType: &extensions.SimpleExtensionDeclaration_ExtensionFunction_{
@@ -438,9 +442,14 @@ func (e *set) ToProto(c *Collection) ([]*extensions.SimpleExtensionURN, []*exten
 		})
 	}
 
-	typeVarDecls := decls[typeVarCount:]
-	sort.Slice(typeVarDecls, func(i, j int) bool {
-		return decls[i].GetExtensionFunction().GetFunctionAnchor() < decls[j].GetExtensionFunction().GetFunctionAnchor()
+	// Sort the function declarations by the anchor for consistent output. Index
+	// the sub-slice for the same reason as above, and read the anchor field
+	// directly so that a mismatched declaration kind fails loudly instead of
+	// comparing a zero anchor.
+	funcDecls := decls[funcsStart:]
+	sort.Slice(funcDecls, func(i, j int) bool {
+		return funcDecls[i].GetExtensionFunction().FunctionAnchor <
+			funcDecls[j].GetExtensionFunction().FunctionAnchor
 	})
 
 	return urns, decls
