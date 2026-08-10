@@ -54,6 +54,9 @@ var versionValues = []versionCase{
 	{"multibyte_producer", types.Version{Producer: "substrait-go (café build)"}},
 	// the spec asks for 40 lowercase hex characters. This is neither, and has to survive anyway.
 	{"loose_git_hash", types.Version{GitHash: "HEAD"}},
+	// the populated row's hash is exactly the length the spec asks for, so without a longer one a
+	// conversion that trimmed to 40 would pass every row here
+	{"long_git_hash", types.Version{GitHash: "0123456789ABCDEF0123456789abcdef0123456789abcdef"}},
 }
 
 // versionRecord is one golden row: a domain version and the bytes a plan carrying it serializes to.
