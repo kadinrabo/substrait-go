@@ -231,7 +231,7 @@ func FromProto(plan *proto.Plan, c *extensions.Collection) (*Plan, error) {
 		return nil, err
 	}
 	ret := &Plan{
-		version:          plan.Version,
+		version:          types.VersionFromProto(plan.Version),
 		extensions:       extSet,
 		advExtension:     plan.AdvancedExtensions,
 		expectedTypeURLs: plan.ExpectedTypeUrls,
@@ -278,7 +278,7 @@ func (p *Plan) ToProto() (*proto.Plan, error) {
 	}
 
 	return &proto.Plan{
-		Version:            p.version,
+		Version:            types.VersionToProto(p.version),
 		ExpectedTypeUrls:   p.expectedTypeURLs,
 		AdvancedExtensions: p.advExtension,
 		Relations:          relations,
