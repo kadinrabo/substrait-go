@@ -1,0 +1,12 @@
+# name	major	minor	patch	gitHash	producer	wireHex
+# substrait.Plan{version} encoded through codec, tab separated.
+# Strings are Go quoted, so an empty one is visible as "".
+zero	0	0	0	""	""	3200
+populated	1	29	3	"0123456789abcdef0123456789abcdef01234567"	"substrait-go v8.0.0 darwin/arm64"	32520801101d18032228303132333435363738396162636465663031323334353637383961626364656630313233343536372a207375627374726169742d676f2076382e302e302064617277696e2f61726d3634
+major_max	4294967295	0	0	""	""	320608ffffffff0f
+minor_max	0	4294967295	0	""	""	320610ffffffff0f
+patch_max	0	0	4294967295	""	""	320618ffffffff0f
+git_hash_only	0	0	0	"abc123"	""	32082206616263313233
+producer_only	0	0	0	""	"substrait-go"	320e2a0c7375627374726169742d676f
+multibyte_producer	0	0	0	""	"substrait-go (café build)"	321c2a1a7375627374726169742d676f2028636166c3a9206275696c6429
+loose_git_hash	0	0	0	"HEAD"	""	3206220448454144
