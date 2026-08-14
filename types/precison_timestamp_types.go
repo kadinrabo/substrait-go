@@ -122,7 +122,7 @@ func (m *PrecisionTimestampType) ToProto() *proto.Type {
 	return &proto.Type{Kind: &proto.Type_PrecisionTimestamp_{
 		PrecisionTimestamp: &proto.Type_PrecisionTimestamp{
 			Precision:              m.Precision.ToProtoVal(),
-			Nullability:            m.Nullability,
+			Nullability:            proto.Type_Nullability(m.Nullability),
 			TypeVariationReference: m.TypeVariationRef}}}
 }
 
@@ -179,7 +179,7 @@ func (m *PrecisionTimestampTzType) ToProto() *proto.Type {
 	return &proto.Type{Kind: &proto.Type_PrecisionTimestampTz{
 		PrecisionTimestampTz: &proto.Type_PrecisionTimestampTZ{
 			Precision:              m.Precision.ToProtoVal(),
-			Nullability:            m.Nullability,
+			Nullability:            proto.Type_Nullability(m.Nullability),
 			TypeVariationReference: m.TypeVariationRef}}}
 }
 
@@ -277,7 +277,7 @@ func (m *PrecisionTimeType) ToProto() *proto.Type {
 	return &proto.Type{Kind: &proto.Type_PrecisionTime_{
 		PrecisionTime: &proto.Type_PrecisionTime{
 			Precision:              m.Precision.ToProtoVal(),
-			Nullability:            m.Nullability,
+			Nullability:            proto.Type_Nullability(m.Nullability),
 			TypeVariationReference: m.TypeVariationRef}}}
 }
 
