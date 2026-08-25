@@ -228,7 +228,10 @@ func FromProtoWithDecoder(plan *proto.Plan, c *extensions.Collection, decoders m
 	if err != nil {
 		return nil, err
 	}
-	version := types.VersionFromProto(plan.Version)
+	var version types.Version
+	if plan.Version != nil {
+		version = types.VersionFromProto(*plan.Version)
+	}
 	ret := &Plan{
 		version:          version,
 		extensions:       extSet,

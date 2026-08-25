@@ -43,10 +43,7 @@ func (v Version) String() string {
 }
 
 // VersionFromProto converts a protobuf version message to the domain Version.
-func VersionFromProto(v *proto.Version) Version {
-	if v == nil {
-		return unsetVersion
-	}
+func VersionFromProto(v proto.Version) Version {
 	return Version{
 		MajorNumber: v.MajorNumber,
 		MinorNumber: v.MinorNumber,

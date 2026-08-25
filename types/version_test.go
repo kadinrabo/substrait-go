@@ -18,7 +18,7 @@ import (
 // A version-less proto maps to the unset placeholder, which renders visibly and serializes back out
 // as a producer "UNSET" version rather than an absent one.
 func TestVersionFromProtoNilIsUnset(t *testing.T) {
-	unset := types.VersionFromProto(nil)
+	unset := types.VersionFromProto(proto.Version{})
 	assert.Equal(t, "0.0.0 (UNSET)", unset.String())
 	assert.Equal(t, "UNSET", types.VersionToProto(unset).GetProducer())
 }
@@ -83,7 +83,7 @@ func TestVersionRoundTrip(t *testing.T) {
 		{"not a hash at all", &proto.Version{MinorNumber: 29, GitHash: "HEAD"}},
 	} {
 		t.Run(td.name, func(t *testing.T) {
-			domain := types.VersionFromProto(td.protoVersion)
+			domain := types.VersionFromProto(*td.protoVersion)
 			assert.Equal(t, td.protoVersion.GetMajorNumber(), domain.MajorNumber)
 			assert.Equal(t, td.protoVersion.GetMinorNumber(), domain.MinorNumber)
 			assert.Equal(t, td.protoVersion.GetPatchNumber(), domain.PatchNumber)

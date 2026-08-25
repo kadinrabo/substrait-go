@@ -1699,8 +1699,12 @@ func ExtendedFromProto(ex *proto.ExtendedExpression, c *extensions.Collection) (
 		}
 	}
 
+	var version types.Version
+	if ex.Version != nil {
+		version = types.VersionFromProto(*ex.Version)
+	}
 	return &Extended{
-		Version:          types.VersionFromProto(ex.Version),
+		Version:          version,
 		Extensions:       extSet,
 		ReferredExpr:     refs,
 		BaseSchema:       base,
