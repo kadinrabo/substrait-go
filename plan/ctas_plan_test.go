@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/substrait-io/substrait-go/v8/expr"
-	"github.com/substrait-io/substrait-go/v8/extensions"
-	"github.com/substrait-io/substrait-go/v8/literal"
-	"github.com/substrait-io/substrait-go/v8/plan"
-	"github.com/substrait-io/substrait-go/v8/types"
+	"github.com/substrait-io/substrait-go/v9/expr"
+	"github.com/substrait-io/substrait-go/v9/extensions"
+	"github.com/substrait-io/substrait-go/v9/literal"
+	"github.com/substrait-io/substrait-go/v9/plan"
+	"github.com/substrait-io/substrait-go/v9/types"
 	substraitproto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 )
 
@@ -131,6 +132,24 @@ func getProjectionForTest2(t *testing.T, b plan.Builder) plan.Rel {
 
 	// projectRel output employee_id, name, department_id, salary, role
 	return makeProjectRel(t, b, filterRel, []int{1, 2, 3, 4, 0})
+}
+
+func TestCreateTableAsSelect(t *testing.T) {
+	b := plan.NewBuilderDefault()
+
+	tableNames := []string{"main", "employee_salaries"}
+	input := b.NamedScan(tableNames, employeeSchema)
+
+	ctas, err := b.CreateTableAsSelect(input, tableNames, employeeSchema)
+	require.NoError(t, err)
+	assert.Equal(t, plan.OutputModeModifiedRecords, ctas.OutputMode())
+	assert.Equal(t, ctas.TableSchema(), employeeSchema)
+	assert.Equal(t, tableNames, ctas.Names())
+	assert.Equal(t, "struct<i32, string?, i32?, decimal?<10,2>, string?>", ctas.RecordType().String())
+
+	ctasRemap, err := ctas.Remap(0, 2)
+	require.NoError(t, err)
+	assert.Equal(t, "struct<i32, i32?>", ctasRemap.RecordType().String())
 }
 
 // TestCreateTableAsSelectRoundTrip verifies that generated plans match the expected JSON.

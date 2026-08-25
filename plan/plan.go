@@ -10,11 +10,11 @@ import (
 	"slices"
 	"strings"
 
-	substraitgo "github.com/substrait-io/substrait-go/v8"
-	"github.com/substrait-io/substrait-go/v8/expr"
-	"github.com/substrait-io/substrait-go/v8/extensions"
-	"github.com/substrait-io/substrait-go/v8/plan/internal"
-	"github.com/substrait-io/substrait-go/v8/types"
+	substraitgo "github.com/substrait-io/substrait-go/v9"
+	"github.com/substrait-io/substrait-go/v9/expr"
+	"github.com/substrait-io/substrait-go/v9/extensions"
+	"github.com/substrait-io/substrait-go/v9/plan/internal"
+	"github.com/substrait-io/substrait-go/v9/types"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -29,7 +29,7 @@ var CurrentVersion = types.Version{
 func init() {
 	if info, ok := debug.ReadBuildInfo(); ok {
 		for _, dep := range info.Deps {
-			if strings.HasPrefix(dep.Path, "github.com/substrait-io/substrait-go/v8") {
+			if strings.HasPrefix(dep.Path, "github.com/substrait-io/substrait-go/v9") {
 				CurrentVersion.Producer += " " + dep.Version
 				break
 			}
@@ -135,15 +135,6 @@ func (r *Relation) ToProto() *proto.PlanRel {
 	return r.rel.ToProtoPlanRel()
 }
 
-type Version interface {
-	GetGitHash() string
-	GetMajorNumber() uint32
-	GetMinorNumber() uint32
-	GetPatchNumber() uint32
-	GetProducer() string
-	fmt.Stringer
-}
-
 type AdvancedExtension interface {
 	GetEnhancement() *anypb.Any
 	GetOptimization() []*anypb.Any
@@ -152,7 +143,7 @@ type AdvancedExtension interface {
 // Plan describes a set of operations to complete. For
 // compactness, identifiers are normalized at the plan level.
 type Plan struct {
-	version           *types.Version
+	version           types.Version
 	extensions        extensions.Set
 	expectedTypeURLs  []string
 	advExtension      *extensions.AdvancedExtension
@@ -162,8 +153,8 @@ type Plan struct {
 	reg expr.ExtensionRegistry
 }
 
-// Version returns the substrait version of the plan.
-func (p *Plan) Version() Version { return p.version }
+// Version returns the plan's version.
+func (p *Plan) Version() types.Version { return p.version }
 
 // ExtensionRegistry returns the set of registered extensions for this plan
 // that it may depend on.
@@ -237,8 +228,9 @@ func FromProtoWithDecoder(plan *proto.Plan, c *extensions.Collection, decoders m
 	if err != nil {
 		return nil, err
 	}
+	version := types.VersionFromProto(plan.Version)
 	ret := &Plan{
-		version:          plan.Version,
+		version:          version,
 		extensions:       extSet,
 		advExtension:     plan.AdvancedExtensions,
 		expectedTypeURLs: plan.ExpectedTypeUrls,
@@ -290,7 +282,7 @@ func (p *Plan) ToProto() (*proto.Plan, error) {
 	}
 
 	return &proto.Plan{
-		Version:            p.version,
+		Version:            types.VersionToProto(p.version),
 		ExpectedTypeUrls:   p.expectedTypeURLs,
 		AdvancedExtensions: p.advExtension,
 		Relations:          relations,
@@ -392,12 +384,16 @@ type Rel interface {
 
 	// Remap modifies the current relation by applying the provided
 	// mapping to the current relation.  Typically used to remove any
-	// unneeded columns or provide them in a different order.  If there
+	// unneeded columns or provide them in a different order. If there
 	// already is a mapping on this relation, this provides mapping over
 	// the current mapping.
 	//
 	// If any column numbers specified are outside the currently available
 	// input range an error is returned and the mapping is left unchanged.
+	//
+	// If Remap is called with no arguments, an empty mapping will be set
+	// on the relation, which removes ALL columns.
+
 	Remap(mapping ...int32) (Rel, error)
 
 	// setMapping sets the current mapping and is for internal use.
