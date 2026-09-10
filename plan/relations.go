@@ -115,25 +115,6 @@ func (b *baseReadRel) SetProjection(p *expr.MaskExpression) {
 	b.projection = p
 }
 
-func (b *baseReadRel) toReadRelProto() *proto.ReadRel {
-	out := &proto.ReadRel{
-		Common:            b.RelCommon.toProto(),
-		BaseSchema:        b.baseSchema.ToProto(),
-		AdvancedExtension: b.advExtension,
-	}
-	if b.filter != nil {
-		out.Filter = b.filter.ToProto()
-	}
-	if b.bestEffortFilter != nil {
-		out.BestEffortFilter = b.bestEffortFilter.ToProto()
-	}
-	if b.projection != nil {
-		out.Projection = b.projection.ToProto()
-	}
-
-	return out
-}
-
 func (b *baseReadRel) GetInputs() []Rel {
 	return []Rel{}
 }
@@ -220,29 +201,6 @@ func (n *NamedTableReadRel) RecordType() types.RecordType {
 	return n.remap(n.directOutputSchema())
 }
 
-func (n *NamedTableReadRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: n.ToProto(),
-		},
-	}
-}
-
-func (n *NamedTableReadRel) ToProto() *proto.Rel {
-	readRel := n.toReadRelProto()
-	readRel.ReadType = &proto.ReadRel_NamedTable_{
-		NamedTable: &proto.ReadRel_NamedTable{
-			Names:             n.names,
-			AdvancedExtension: n.advExtension,
-		},
-	}
-	return &proto.Rel{
-		RelType: &proto.Rel_Read{
-			Read: readRel,
-		},
-	}
-}
-
 func (n *NamedTableReadRel) Copy(_ ...Rel) (Rel, error) {
 	return n, nil
 }
@@ -273,33 +231,6 @@ type VirtualTableReadRel struct {
 
 func (v *VirtualTableReadRel) Values() []expr.VirtualTableExpressionValue {
 	return v.values
-}
-
-func (v *VirtualTableReadRel) ToProto() *proto.Rel {
-	readRel := v.toReadRelProto()
-	values := make([]*proto.Expression_Nested_Struct, len(v.values))
-	for i, v := range v.values {
-		values[i] = v.ToProto()
-	}
-
-	readRel.ReadType = &proto.ReadRel_VirtualTable_{
-		VirtualTable: &proto.ReadRel_VirtualTable{
-			Expressions: values,
-		},
-	}
-	return &proto.Rel{
-		RelType: &proto.Rel_Read{
-			Read: readRel,
-		},
-	}
-}
-
-func (v *VirtualTableReadRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: v.ToProto(),
-		},
-	}
 }
 
 func (v *VirtualTableReadRel) Copy(_ ...Rel) (Rel, error) {
@@ -350,28 +281,6 @@ type ExtensionTableReadRel struct {
 }
 
 func (e *ExtensionTableReadRel) Detail() *anypb.Any { return e.detail }
-
-func (e *ExtensionTableReadRel) ToProto() *proto.Rel {
-	readRel := e.toReadRelProto()
-	readRel.ReadType = &proto.ReadRel_ExtensionTable_{
-		ExtensionTable: &proto.ReadRel_ExtensionTable{
-			Detail: e.detail,
-		},
-	}
-	return &proto.Rel{
-		RelType: &proto.Rel_Read{
-			Read: readRel,
-		},
-	}
-}
-
-func (e *ExtensionTableReadRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: e.ToProto(),
-		},
-	}
-}
 
 func (e *ExtensionTableReadRel) Copy(_ ...Rel) (Rel, error) {
 	return e, nil
@@ -432,51 +341,10 @@ func (n *IcebergTableReadRel) NamedTableAdvancedExtension() *extensions.Advanced
 	return n.advExtension
 }
 
+func (n *IcebergTableReadRel) TableType() IcebergTableType { return n.tableType }
+
 func (n *IcebergTableReadRel) RecordType() types.RecordType {
 	return n.remap(n.directOutputSchema())
-}
-
-func (n *IcebergTableReadRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: n.ToProto(),
-		},
-	}
-}
-
-func (n *IcebergTableReadRel) ToProto() *proto.Rel {
-	readRel := n.toReadRelProto()
-
-	if directTableType, ok := n.tableType.(*Direct); ok {
-		direct := &proto.ReadRel_IcebergTable_MetadataFileRead{
-			MetadataUri: directTableType.MetadataUri,
-		}
-
-		// SnapshotId and SnapshotTimestamp are mutually exclusive
-		if directTableType.SnapshotId != "" {
-			direct.Snapshot = &proto.ReadRel_IcebergTable_MetadataFileRead_SnapshotId{
-				SnapshotId: string(directTableType.SnapshotId),
-			}
-		} else if directTableType.SnapshotTimestamp != 0 {
-			direct.Snapshot = &proto.ReadRel_IcebergTable_MetadataFileRead_SnapshotTimestamp{
-				SnapshotTimestamp: int64(directTableType.SnapshotTimestamp),
-			}
-		}
-
-		readRel.ReadType = &proto.ReadRel_IcebergTable_{
-			IcebergTable: &proto.ReadRel_IcebergTable{
-				TableType: &proto.ReadRel_IcebergTable_Direct{
-					Direct: direct,
-				},
-			},
-		}
-	}
-
-	return &proto.Rel{
-		RelType: &proto.Rel_Read{
-			Read: readRel,
-		},
-	}
 }
 
 func (n *IcebergTableReadRel) Copy(_ ...Rel) (Rel, error) {
@@ -580,48 +448,6 @@ func (f *FileOrFiles) fromProto(p *proto.ReadRel_LocalFiles_FileOrFiles) {
 	}
 }
 
-func (f *FileOrFiles) ToProto() *proto.ReadRel_LocalFiles_FileOrFiles {
-	ret := &proto.ReadRel_LocalFiles_FileOrFiles{
-		PartitionIndex: f.PartIndex,
-		Start:          f.Start,
-		Length:         f.Len,
-	}
-	switch f.PathType {
-	case URIPath:
-		ret.PathType = &proto.ReadRel_LocalFiles_FileOrFiles_UriPath{UriPath: f.Path}
-	case URIPathGlob:
-		ret.PathType = &proto.ReadRel_LocalFiles_FileOrFiles_UriPathGlob{UriPathGlob: f.Path}
-	case URIFile:
-		ret.PathType = &proto.ReadRel_LocalFiles_FileOrFiles_UriFile{UriFile: f.Path}
-	case URIFolder:
-		ret.PathType = &proto.ReadRel_LocalFiles_FileOrFiles_UriFolder{UriFolder: f.Path}
-	}
-
-	switch fm := f.Format.(type) {
-	case *ParquetReadOptions:
-		ret.FileFormat = &proto.ReadRel_LocalFiles_FileOrFiles_Parquet{
-			Parquet: (*proto.ReadRel_LocalFiles_FileOrFiles_ParquetReadOptions)(fm),
-		}
-	case *ArrowReadOptions:
-		ret.FileFormat = &proto.ReadRel_LocalFiles_FileOrFiles_Arrow{
-			Arrow: (*proto.ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions)(fm),
-		}
-	case *OrcReadOptions:
-		ret.FileFormat = &proto.ReadRel_LocalFiles_FileOrFiles_Orc{
-			Orc: (*proto.ReadRel_LocalFiles_FileOrFiles_OrcReadOptions)(fm),
-		}
-	case *DwrfReadOptions:
-		ret.FileFormat = &proto.ReadRel_LocalFiles_FileOrFiles_Dwrf{
-			Dwrf: (*proto.ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions)(fm),
-		}
-	case *ExtensionReadOptions:
-		ret.FileFormat = &proto.ReadRel_LocalFiles_FileOrFiles_Extension{
-			Extension: (*anypb.Any)(fm),
-		}
-	}
-	return ret
-}
-
 // LocalFileReadRel represents a list of files in input of a scan operation.
 type LocalFileReadRel struct {
 	baseReadRel
@@ -634,42 +460,22 @@ func (lf *LocalFileReadRel) Item(i int) FileOrFiles {
 	return lf.items[i]
 }
 
+func (lf *LocalFileReadRel) Items() []FileOrFiles { return lf.items }
+
 func (lf *LocalFileReadRel) GetAdvancedExtension() *extensions.AdvancedExtension {
 	return lf.advExtension
+}
+
+// ReadRelAdvancedExtension returns the advanced extension on the enclosing read
+// relation, which GetAdvancedExtension shadows with the local-files one.
+func (lf *LocalFileReadRel) ReadRelAdvancedExtension() *extensions.AdvancedExtension {
+	return lf.baseReadRel.GetAdvancedExtension()
 }
 
 func (lf *LocalFileReadRel) SetAdvancedExtension(advExtension *extensions.AdvancedExtension) *extensions.AdvancedExtension {
 	existing := lf.advExtension
 	lf.advExtension = advExtension
 	return existing
-}
-
-func (lf *LocalFileReadRel) ToProto() *proto.Rel {
-	items := make([]*proto.ReadRel_LocalFiles_FileOrFiles, len(lf.items))
-	for i, f := range lf.items {
-		items[i] = f.ToProto()
-	}
-
-	readRel := lf.toReadRelProto()
-	readRel.ReadType = &proto.ReadRel_LocalFiles_{
-		LocalFiles: &proto.ReadRel_LocalFiles{
-			Items:             items,
-			AdvancedExtension: lf.advExtension,
-		},
-	}
-	return &proto.Rel{
-		RelType: &proto.Rel_Read{
-			Read: readRel,
-		},
-	}
-}
-
-func (lf *LocalFileReadRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: lf.ToProto(),
-		},
-	}
 }
 
 func (lf *LocalFileReadRel) Copy(_ ...Rel) (Rel, error) {
@@ -726,32 +532,6 @@ func (p *ProjectRel) SetAdvancedExtension(advExtension *extensions.AdvancedExten
 	existing := p.advExtension
 	p.advExtension = advExtension
 	return existing
-}
-
-func (p *ProjectRel) ToProto() *proto.Rel {
-	exprs := make([]*proto.Expression, len(p.exprs))
-	for i, e := range p.exprs {
-		exprs[i] = e.ToProto()
-	}
-
-	return &proto.Rel{
-		RelType: &proto.Rel_Project{
-			Project: &proto.ProjectRel{
-				Common:            p.toProto(),
-				Input:             p.input.ToProto(),
-				Expressions:       exprs,
-				AdvancedExtension: p.advExtension,
-			},
-		},
-	}
-}
-
-func (p *ProjectRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: p.ToProto(),
-		},
-	}
 }
 
 func (p *ProjectRel) GetInputs() []Rel {
@@ -912,7 +692,8 @@ func (j *JoinRel) PostJoinFilter() expr.Expression {
 	}
 	return j.postJoinFilter
 }
-func (j *JoinRel) Type() JoinType { return j.joinType }
+func (j *JoinRel) RawPostJoinFilter() expr.Expression { return j.postJoinFilter }
+func (j *JoinRel) Type() JoinType                     { return j.joinType }
 func (j *JoinRel) GetAdvancedExtension() *extensions.AdvancedExtension {
 	return j.advExtension
 }
@@ -920,35 +701,6 @@ func (j *JoinRel) SetAdvancedExtension(advExtension *extensions.AdvancedExtensio
 	existing := j.advExtension
 	j.advExtension = advExtension
 	return existing
-}
-
-func (j *JoinRel) ToProto() *proto.Rel {
-	outRel := &proto.JoinRel{
-		Common:            j.toProto(),
-		Left:              j.left.ToProto(),
-		Right:             j.right.ToProto(),
-		Expression:        j.expr.ToProto(),
-		Type:              proto.JoinRel_JoinType(j.joinType),
-		AdvancedExtension: j.advExtension,
-	}
-
-	if j.postJoinFilter != nil {
-		outRel.PostJoinFilter = j.postJoinFilter.ToProto()
-	}
-
-	return &proto.Rel{
-		RelType: &proto.Rel_Join{
-			Join: outRel,
-		},
-	}
-}
-
-func (j *JoinRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: j.ToProto(),
-		},
-	}
 }
 
 func (j *JoinRel) GetInputs() []Rel {
@@ -1014,27 +766,6 @@ func (c *CrossRel) SetAdvancedExtension(advExtension *extensions.AdvancedExtensi
 	return existing
 }
 
-func (c *CrossRel) ToProto() *proto.Rel {
-	return &proto.Rel{
-		RelType: &proto.Rel_Cross{
-			Cross: &proto.CrossRel{
-				Common:            c.toProto(),
-				Left:              c.left.ToProto(),
-				Right:             c.right.ToProto(),
-				AdvancedExtension: c.advExtension,
-			},
-		},
-	}
-}
-
-func (c *CrossRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: c.ToProto(),
-		},
-	}
-}
-
 func (c *CrossRel) GetInputs() []Rel {
 	return []Rel{c.left, c.right}
 }
@@ -1085,32 +816,6 @@ func (f *FetchRel) SetAdvancedExtension(advExtension *extensions.AdvancedExtensi
 	return existing
 }
 
-func (f *FetchRel) ToProto() *proto.Rel {
-	return &proto.Rel{
-		RelType: &proto.Rel_Fetch{
-			Fetch: &proto.FetchRel{
-				Common: f.toProto(),
-				Input:  f.input.ToProto(),
-				OffsetMode: &proto.FetchRel_Offset{
-					Offset: f.offset,
-				},
-				CountMode: &proto.FetchRel_Count{
-					Count: f.count,
-				},
-				AdvancedExtension: f.advExtension,
-			},
-		},
-	}
-}
-
-func (f *FetchRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: f.ToProto(),
-		},
-	}
-}
-
 func (f *FetchRel) GetInputs() []Rel {
 	return []Rel{f.input}
 }
@@ -1151,15 +856,7 @@ func (am *AggRelMeasure) Filter() expr.Expression {
 	return am.filter
 }
 
-func (am *AggRelMeasure) ToProto() *proto.AggregateRel_Measure {
-	ret := &proto.AggregateRel_Measure{
-		Measure: am.measure.ToProto(),
-	}
-	if am.filter != nil {
-		ret.Filter = am.filter.ToProto()
-	}
-	return ret
-}
+func (am *AggRelMeasure) RawFilter() expr.Expression { return am.filter }
 
 // AggregateRel is a relational operator representing a GROUP BY aggregate.
 type AggregateRel struct {
@@ -1204,46 +901,6 @@ func (ar *AggregateRel) SetAdvancedExtension(advExtension *extensions.AdvancedEx
 	existing := ar.advExtension
 	ar.advExtension = advExtension
 	return existing
-}
-
-func (ar *AggregateRel) ToProto() *proto.Rel {
-	groupingExpressionsProto := make([]*proto.Expression, len(ar.groupingExpressions))
-	for i, e := range ar.groupingExpressions {
-		groupingExpressionsProto[i] = e.ToProto()
-	}
-
-	groupings := make([]*proto.AggregateRel_Grouping, len(ar.groupingReferences))
-	for i := range ar.groupingReferences {
-		groupings[i] = &proto.AggregateRel_Grouping{
-			ExpressionReferences: ar.groupingReferences[i],
-		}
-	}
-
-	measures := make([]*proto.AggregateRel_Measure, len(ar.measures))
-	for i, m := range ar.measures {
-		measures[i] = m.ToProto()
-	}
-
-	return &proto.Rel{
-		RelType: &proto.Rel_Aggregate{
-			Aggregate: &proto.AggregateRel{
-				Common:              ar.toProto(),
-				Input:               ar.input.ToProto(),
-				GroupingExpressions: groupingExpressionsProto,
-				Groupings:           groupings,
-				Measures:            measures,
-				AdvancedExtension:   ar.advExtension,
-			},
-		},
-	}
-}
-
-func (ar *AggregateRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: ar.ToProto(),
-		},
-	}
 }
 
 func (ar *AggregateRel) GetInputs() []Rel {
@@ -1377,31 +1034,6 @@ func (sr *SortRel) SetAdvancedExtension(advExtension *extensions.AdvancedExtensi
 	return existing
 }
 
-func (sr *SortRel) ToProto() *proto.Rel {
-	sorts := make([]*proto.SortField, len(sr.sorts))
-	for i, s := range sr.sorts {
-		sorts[i] = s.ToProto()
-	}
-	return &proto.Rel{
-		RelType: &proto.Rel_Sort{
-			Sort: &proto.SortRel{
-				Common:            sr.toProto(),
-				Input:             sr.input.ToProto(),
-				Sorts:             sorts,
-				AdvancedExtension: sr.advExtension,
-			},
-		},
-	}
-}
-
-func (sr *SortRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: sr.ToProto(),
-		},
-	}
-}
-
 func (sr *SortRel) GetInputs() []Rel {
 	return []Rel{sr.input}
 }
@@ -1465,27 +1097,6 @@ func (fr *FilterRel) SetAdvancedExtension(advExtension *extensions.AdvancedExten
 	existing := fr.advExtension
 	fr.advExtension = advExtension
 	return existing
-}
-
-func (fr *FilterRel) ToProto() *proto.Rel {
-	return &proto.Rel{
-		RelType: &proto.Rel_Filter{
-			Filter: &proto.FilterRel{
-				Common:            fr.toProto(),
-				Input:             fr.input.ToProto(),
-				Condition:         fr.cond.ToProto(),
-				AdvancedExtension: fr.advExtension,
-			},
-		},
-	}
-}
-
-func (fr *FilterRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: fr.ToProto(),
-		},
-	}
 }
 
 func (fr *FilterRel) GetInputs() []Rel {
@@ -1587,31 +1198,6 @@ func (s *SetRel) SetAdvancedExtension(advExtension *extensions.AdvancedExtension
 	return existing
 }
 
-func (s *SetRel) ToProto() *proto.Rel {
-	inputs := make([]*proto.Rel, len(s.inputs))
-	for i, in := range s.inputs {
-		inputs[i] = in.ToProto()
-	}
-	return &proto.Rel{
-		RelType: &proto.Rel_Set{
-			Set: &proto.SetRel{
-				Common:            s.toProto(),
-				Inputs:            inputs,
-				Op:                proto.SetRel_SetOp(s.op),
-				AdvancedExtension: s.advExtension,
-			},
-		},
-	}
-}
-
-func (s *SetRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: s.ToProto(),
-		},
-	}
-}
-
 func (s *SetRel) GetInputs() []Rel {
 	return s.inputs
 }
@@ -1703,26 +1289,6 @@ func (es *ExtensionSingleRel) Detail() *anypb.Any {
 // Definition returns the extension definition if present.
 func (es *ExtensionSingleRel) Definition() ExtensionRelDefinition { return es.definition }
 
-func (es *ExtensionSingleRel) ToProto() *proto.Rel {
-	return &proto.Rel{
-		RelType: &proto.Rel_ExtensionSingle{
-			ExtensionSingle: &proto.ExtensionSingleRel{
-				Common: es.toProto(),
-				Input:  es.input.ToProto(),
-				Detail: es.Detail(),
-			},
-		},
-	}
-}
-
-func (es *ExtensionSingleRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: es.ToProto(),
-		},
-	}
-}
-
 func (es *ExtensionSingleRel) GetInputs() []Rel {
 	return []Rel{es.input}
 }
@@ -1769,25 +1335,6 @@ func (el *ExtensionLeafRel) Detail() *anypb.Any {
 // Definition returns the extension definition if present.
 func (el *ExtensionLeafRel) Definition() ExtensionRelDefinition { return el.definition }
 
-func (el *ExtensionLeafRel) ToProto() *proto.Rel {
-	return &proto.Rel{
-		RelType: &proto.Rel_ExtensionLeaf{
-			ExtensionLeaf: &proto.ExtensionLeafRel{
-				Common: el.toProto(),
-				Detail: el.Detail(),
-			},
-		},
-	}
-}
-
-func (el *ExtensionLeafRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: el.ToProto(),
-		},
-	}
-}
-
 func (el *ExtensionLeafRel) GetInputs() []Rel {
 	return []Rel{}
 }
@@ -1827,30 +1374,6 @@ func (em *ExtensionMultiRel) Detail() *anypb.Any {
 
 // Definition returns the extension definition if present.
 func (em *ExtensionMultiRel) Definition() ExtensionRelDefinition { return em.definition }
-
-func (em *ExtensionMultiRel) ToProto() *proto.Rel {
-	inputs := make([]*proto.Rel, len(em.inputs))
-	for i, in := range em.inputs {
-		inputs[i] = in.ToProto()
-	}
-	return &proto.Rel{
-		RelType: &proto.Rel_ExtensionMulti{
-			ExtensionMulti: &proto.ExtensionMultiRel{
-				Common: em.toProto(),
-				Inputs: inputs,
-				Detail: em.Detail(),
-			},
-		},
-	}
-}
-
-func (em *ExtensionMultiRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: em.ToProto(),
-		},
-	}
-}
 
 func (em *ExtensionMultiRel) GetInputs() []Rel {
 	return em.inputs
@@ -1918,7 +1441,7 @@ func (t SimpleComparisonType) String() string {
 // compared. It is either a SimpleComparison or a CustomComparison. The
 // unexported toProto method seals it to this package.
 type JoinKeyComparison interface {
-	toProto() *proto.ComparisonJoinKey_ComparisonType
+	isJoinKeyComparison()
 }
 
 // SimpleComparison uses one of the predefined SimpleComparisonType behaviors.
@@ -1926,11 +1449,7 @@ type SimpleComparison struct {
 	Type SimpleComparisonType
 }
 
-func (c SimpleComparison) toProto() *proto.ComparisonJoinKey_ComparisonType {
-	return &proto.ComparisonJoinKey_ComparisonType{
-		InnerType: &proto.ComparisonJoinKey_ComparisonType_Simple{Simple: proto.ComparisonJoinKey_SimpleComparisonType(c.Type)},
-	}
-}
+func (SimpleComparison) isJoinKeyComparison() {}
 
 // CustomComparison references a binary function with a boolean return type
 // describing a custom comparison behavior.
@@ -1938,13 +1457,7 @@ type CustomComparison struct {
 	FunctionReference uint32
 }
 
-func (c CustomComparison) toProto() *proto.ComparisonJoinKey_ComparisonType {
-	return &proto.ComparisonJoinKey_ComparisonType{
-		InnerType: &proto.ComparisonJoinKey_ComparisonType_CustomFunctionReference{
-			CustomFunctionReference: c.FunctionReference,
-		},
-	}
-}
+func (CustomComparison) isJoinKeyComparison() {}
 
 // ComparisonJoinKey is a single key comparison used by HashJoinRel and
 // MergeJoinRel, pairing a left and right field reference with the comparison
@@ -1968,54 +1481,6 @@ func NewEqualityJoinKey(left, right *expr.FieldReference) *ComparisonJoinKey {
 func (k *ComparisonJoinKey) Left() *expr.FieldReference    { return k.left }
 func (k *ComparisonJoinKey) Right() *expr.FieldReference   { return k.right }
 func (k *ComparisonJoinKey) Comparison() JoinKeyComparison { return k.comparison }
-
-func (k *ComparisonJoinKey) ToProto() *proto.ComparisonJoinKey {
-	return &proto.ComparisonJoinKey{
-		Left:       k.left.ToProtoFieldRef(),
-		Right:      k.right.ToProtoFieldRef(),
-		Comparison: k.comparison.toProto(),
-	}
-}
-
-// comparisonJoinKeysToProto converts a list of join keys to their proto form.
-func comparisonJoinKeysToProto(keys []*ComparisonJoinKey) []*proto.ComparisonJoinKey {
-	out := make([]*proto.ComparisonJoinKey, len(keys))
-	for i, k := range keys {
-		out[i] = k.ToProto()
-	}
-	return out
-}
-
-// tryEqualityJoinKeysToLegacyProto returns the deprecated left_keys/right_keys
-// representation of the given join keys with ok=true, but only when every key
-// is a plain SIMPLE_COMPARISON_TYPE_EQ comparison. Those are the only joins the
-// deprecated fields can express; IS_NOT_DISTINCT_FROM, MIGHT_EQUAL and custom
-// comparisons have no legacy encoding and an old consumer would silently treat
-// them as equality, so for those it returns ok=false and the caller should emit
-// only the modern keys field.
-func tryEqualityJoinKeysToLegacyProto(keys []*ComparisonJoinKey) (leftKeys, rightKeys []*proto.Expression_FieldReference, ok bool) {
-	for _, k := range keys {
-		switch simple := k.comparison.(type) {
-		case SimpleComparison:
-			if simple.Type != SimpleComparisonTypeEq {
-				return nil, nil, false
-			}
-		case *SimpleComparison:
-			if simple == nil || simple.Type != SimpleComparisonTypeEq {
-				return nil, nil, false
-			}
-		default:
-			return nil, nil, false
-		}
-	}
-	leftKeys = make([]*proto.Expression_FieldReference, len(keys))
-	rightKeys = make([]*proto.Expression_FieldReference, len(keys))
-	for i, k := range keys {
-		leftKeys[i] = k.left.ToProtoFieldRef()
-		rightKeys[i] = k.right.ToProtoFieldRef()
-	}
-	return leftKeys, rightKeys, true
-}
 
 // leftJoinKeys returns the left-hand field references of the given join keys.
 func leftJoinKeys(keys []*ComparisonJoinKey) []*expr.FieldReference {
@@ -2135,7 +1600,8 @@ func (hr *HashJoinRel) PostJoinFilter() expr.Expression {
 	}
 	return hr.postJoinFilter
 }
-func (hr *HashJoinRel) Type() HashMergeJoinType { return hr.joinType }
+func (hr *HashJoinRel) RawPostJoinFilter() expr.Expression { return hr.postJoinFilter }
+func (hr *HashJoinRel) Type() HashMergeJoinType            { return hr.joinType }
 func (hr *HashJoinRel) GetAdvancedExtension() *extensions.AdvancedExtension {
 	return hr.advExtension
 }
@@ -2143,39 +1609,6 @@ func (hr *HashJoinRel) SetAdvancedExtension(advExtension *extensions.AdvancedExt
 	existing := hr.advExtension
 	hr.advExtension = advExtension
 	return existing
-}
-
-func (hr *HashJoinRel) ToProto() *proto.Rel {
-	ret := &proto.Rel_HashJoin{
-		HashJoin: &proto.HashJoinRel{
-			Common:            hr.toProto(),
-			Left:              hr.left.ToProto(),
-			Right:             hr.right.ToProto(),
-			Keys:              comparisonJoinKeysToProto(hr.keys),
-			Type:              proto.HashJoinRel_JoinType(hr.joinType),
-			AdvancedExtension: hr.advExtension,
-		},
-	}
-
-	if leftKeys, rightKeys, ok := tryEqualityJoinKeysToLegacyProto(hr.keys); ok {
-		ret.HashJoin.LeftKeys = leftKeys
-		ret.HashJoin.RightKeys = rightKeys
-	}
-
-	if hr.postJoinFilter != nil {
-		ret.HashJoin.PostJoinFilter = hr.postJoinFilter.ToProto()
-	}
-
-	return &proto.Rel{
-		RelType: ret}
-}
-
-func (hr *HashJoinRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: hr.ToProto(),
-		},
-	}
 }
 
 func (hr *HashJoinRel) GetInputs() []Rel {
@@ -2252,7 +1685,8 @@ func (mr *MergeJoinRel) PostJoinFilter() expr.Expression {
 	}
 	return mr.postJoinFilter
 }
-func (mr *MergeJoinRel) Type() HashMergeJoinType { return mr.joinType }
+func (mr *MergeJoinRel) RawPostJoinFilter() expr.Expression { return mr.postJoinFilter }
+func (mr *MergeJoinRel) Type() HashMergeJoinType            { return mr.joinType }
 func (mr *MergeJoinRel) GetAdvancedExtension() *extensions.AdvancedExtension {
 	return mr.advExtension
 }
@@ -2260,39 +1694,6 @@ func (mr *MergeJoinRel) SetAdvancedExtension(advExtension *extensions.AdvancedEx
 	existing := mr.advExtension
 	mr.advExtension = advExtension
 	return existing
-}
-
-func (mr *MergeJoinRel) ToProto() *proto.Rel {
-	ret := &proto.Rel_MergeJoin{
-		MergeJoin: &proto.MergeJoinRel{
-			Common:            mr.toProto(),
-			Left:              mr.left.ToProto(),
-			Right:             mr.right.ToProto(),
-			Keys:              comparisonJoinKeysToProto(mr.keys),
-			Type:              proto.MergeJoinRel_JoinType(mr.joinType),
-			AdvancedExtension: mr.advExtension,
-		},
-	}
-
-	if leftKeys, rightKeys, ok := tryEqualityJoinKeysToLegacyProto(mr.keys); ok {
-		ret.MergeJoin.LeftKeys = leftKeys
-		ret.MergeJoin.RightKeys = rightKeys
-	}
-
-	if mr.postJoinFilter != nil {
-		ret.MergeJoin.PostJoinFilter = mr.postJoinFilter.ToProto()
-	}
-
-	return &proto.Rel{
-		RelType: ret}
-}
-
-func (mr *MergeJoinRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: mr.ToProto(),
-		},
-	}
 }
 
 func (mr *MergeJoinRel) GetInputs() []Rel {
@@ -2425,33 +1826,6 @@ func (wr *NamedTableWriteRel) Op() WriteOp { return wr.op }
 func (wr *NamedTableWriteRel) Input() Rel  { return wr.input }
 func (wr *NamedTableWriteRel) OutputMode() OutputMode {
 	return wr.outputMode
-}
-
-func (wr *NamedTableWriteRel) ToProto() *proto.Rel {
-	return &proto.Rel{
-		RelType: &proto.Rel_Write{
-			Write: &proto.WriteRel{
-				Common: wr.toProto(),
-				WriteType: &proto.WriteRel_NamedTable{
-					NamedTable: &proto.NamedObjectWrite{
-						Names:             wr.names,
-						AdvancedExtension: wr.advExtension,
-					},
-				},
-				TableSchema: wr.tableSchema.ToProto(),
-				Op:          proto.WriteRel_WriteOp(wr.op),
-				Input:       wr.input.ToProto(),
-			},
-		},
-	}
-}
-
-func (wr *NamedTableWriteRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: wr.ToProto(),
-		},
-	}
 }
 
 func (wr *NamedTableWriteRel) GetInputs() []Rel {

@@ -5,14 +5,12 @@ package plan
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/substrait-io/substrait-go/v9/expr"
 	"github.com/substrait-io/substrait-go/v9/extensions"
 	"github.com/substrait-io/substrait-go/v9/types"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
-	"google.golang.org/protobuf/testing/protocmp"
 )
 
 // createJoinInput builds a named table read rel with three required int64 columns.
@@ -51,67 +49,46 @@ func eqKeys(t *testing.T, left, right Rel) []*ComparisonJoinKey {
 	}
 }
 
-// Producing a join always writes the new keys field, and additionally
-// mirrors the deprecated left_keys/right_keys when every key is a plain EQ
-// comparison so old consumers keep working for equality joins.
-func TestJoinWritesLegacyKeysForEqualityOnly(t *testing.T) {
-	left, right := joinInputs()
-	wantLeft := []*proto.Expression_FieldReference{
-		keyRef(t, left, 0).ToProtoFieldRef(), keyRef(t, left, 1).ToProtoFieldRef()}
-	wantRight := []*proto.Expression_FieldReference{
-		keyRef(t, right, 2).ToProtoFieldRef(), keyRef(t, right, 0).ToProtoFieldRef()}
+// i64Type is a required int64 protobuf type.
+func i64Type() *proto.Type {
+	return &proto.Type{Kind: &proto.Type_I64_{I64: &proto.Type_I64{Nullability: proto.Type_NULLABILITY_REQUIRED}}}
+}
 
-	// All-EQ keys: new keys field plus mirrored deprecated fields.
-	for _, tc := range []struct {
-		name string
-		keys []*ComparisonJoinKey
-	}{
-		{name: "value comparison", keys: eqKeys(t, left, right)},
-		{name: "pointer comparison", keys: []*ComparisonJoinKey{
-			NewComparisonJoinKey(keyRef(t, left, 0), keyRef(t, right, 2), &SimpleComparison{Type: SimpleComparisonTypeEq}),
-			NewComparisonJoinKey(keyRef(t, left, 1), keyRef(t, right, 0), &SimpleComparison{Type: SimpleComparisonTypeEq}),
-		}},
-	} {
-		t.Run("all EQ mirrors deprecated fields: "+tc.name, func(t *testing.T) {
-			hash := (&HashJoinRel{left: left, right: right, joinType: HashMergeInner, keys: tc.keys}).ToProto().GetHashJoin()
-			assert.Len(t, hash.GetKeys(), 2)
-			assert.Empty(t, cmp.Diff(wantLeft, hash.GetLeftKeys(), protocmp.Transform()))
-			assert.Empty(t, cmp.Diff(wantRight, hash.GetRightKeys(), protocmp.Transform()))
+// scanProtoRel is the protobuf for a named table read with three int64 columns,
+// matching the domain input createJoinInput produces.
+func scanProtoRel(name string) *proto.Rel {
+	return &proto.Rel{RelType: &proto.Rel_Read{Read: &proto.ReadRel{
+		Common: &proto.RelCommon{EmitKind: &proto.RelCommon_Direct_{Direct: &proto.RelCommon_Direct{}}},
+		BaseSchema: &proto.NamedStruct{
+			Names:  []string{"x", "y", "z"},
+			Struct: &proto.Type_Struct{Nullability: proto.Type_NULLABILITY_REQUIRED, Types: []*proto.Type{i64Type(), i64Type(), i64Type()}},
+		},
+		ReadType: &proto.ReadRel_NamedTable_{NamedTable: &proto.ReadRel_NamedTable{Names: []string{name}}},
+	}}}
+}
 
-			merge := (&MergeJoinRel{left: left, right: right, joinType: HashMergeInner, keys: tc.keys}).ToProto().GetMergeJoin()
-			assert.Len(t, merge.GetKeys(), 2)
-			assert.Empty(t, cmp.Diff(wantLeft, merge.GetLeftKeys(), protocmp.Transform()))
-			assert.Empty(t, cmp.Diff(wantRight, merge.GetRightKeys(), protocmp.Transform()))
-		})
+// fieldRefProto is a root-referenced struct-field protobuf reference.
+func fieldRefProto(field int32) *proto.Expression_FieldReference {
+	return &proto.Expression_FieldReference{
+		ReferenceType: &proto.Expression_FieldReference_DirectReference{
+			DirectReference: &proto.Expression_ReferenceSegment{
+				ReferenceType: &proto.Expression_ReferenceSegment_StructField_{
+					StructField: &proto.Expression_ReferenceSegment_StructField{Field: field}}}},
+		RootType: &proto.Expression_FieldReference_RootReference_{RootReference: &proto.Expression_FieldReference_RootReference{}},
 	}
+}
 
-	// A non-EQ comparison anywhere makes the legacy fields lossy, so they are
-	// omitted entirely and only the new keys field is written.
-	for _, tc := range []struct {
-		name       string
-		comparison JoinKeyComparison
-	}{
-		{"is not distinct from", SimpleComparison{Type: SimpleComparisonTypeIsNotDistinctFrom}},
-		{"might equal", SimpleComparison{Type: SimpleComparisonTypeMightEqual}},
-		{"custom", CustomComparison{FunctionReference: 7}},
-	} {
-		t.Run("non-EQ omits deprecated fields: "+tc.name, func(t *testing.T) {
-			keys := []*ComparisonJoinKey{
-				NewEqualityJoinKey(keyRef(t, left, 0), keyRef(t, right, 2)),
-				NewComparisonJoinKey(keyRef(t, left, 1), keyRef(t, right, 0), tc.comparison),
-			}
+func eqComparisonProto() *proto.ComparisonJoinKey_ComparisonType {
+	return &proto.ComparisonJoinKey_ComparisonType{
+		InnerType: &proto.ComparisonJoinKey_ComparisonType_Simple{Simple: proto.ComparisonJoinKey_SIMPLE_COMPARISON_TYPE_EQ}}
+}
 
-			hash := (&HashJoinRel{left: left, right: right, joinType: HashMergeInner, keys: keys}).ToProto().GetHashJoin()
-			assert.Len(t, hash.GetKeys(), 2)
-			assert.Empty(t, hash.GetLeftKeys())
-			assert.Empty(t, hash.GetRightKeys())
-
-			merge := (&MergeJoinRel{left: left, right: right, joinType: HashMergeInner, keys: keys}).ToProto().GetMergeJoin()
-			assert.Len(t, merge.GetKeys(), 2)
-			assert.Empty(t, merge.GetLeftKeys())
-			assert.Empty(t, merge.GetRightKeys())
-		})
-	}
+// fieldIndex returns the struct-field index a join key references on one side.
+func fieldIndex(t *testing.T, ref *expr.FieldReference) int32 {
+	t.Helper()
+	seg, ok := ref.Reference.(*expr.StructFieldRef)
+	require.True(t, ok)
+	return seg.Field
 }
 
 // The deprecated accessors derive their values from the keys.
@@ -131,181 +108,107 @@ func TestJoinDeprecatedKeyAccessors(t *testing.T) {
 }
 
 // assertConsumedLegacyKeys checks that the keys decoded from a legacy producer
-// are the expected pair of EQ comparisons.
+// are the expected pair of EQ comparisons over fields (0,2) and (1,0).
 func assertConsumedLegacyKeys(t *testing.T, keys []*ComparisonJoinKey) {
 	t.Helper()
 	require.Len(t, keys, 2)
 	for _, k := range keys {
 		assert.Equal(t, SimpleComparison{Type: SimpleComparisonTypeEq}, k.Comparison())
 	}
+	assert.Equal(t, int32(0), fieldIndex(t, keys[0].Left()))
+	assert.Equal(t, int32(2), fieldIndex(t, keys[0].Right()))
+	assert.Equal(t, int32(1), fieldIndex(t, keys[1].Left()))
+	assert.Equal(t, int32(0), fieldIndex(t, keys[1].Right()))
 }
 
 // A hash join plan from a legacy producer (only deprecated fields set) is
-// consumed and mapped to keys with EQ comparisons. Re-emitting sets the new
-// keys field and, because these are all EQ comparisons, mirrors the deprecated
-// fields back as well.
+// consumed and mapped to keys with EQ comparisons.
 func TestHashJoinConsumesLegacyKeys(t *testing.T) {
-	left, right := joinInputs()
 	reg := joinTestRegistry()
-
 	legacy := &proto.Rel{RelType: &proto.Rel_HashJoin{HashJoin: &proto.HashJoinRel{
-		Common: &proto.RelCommon{},
-		Left:   left.ToProto(),
-		Right:  right.ToProto(),
-		Type:   proto.HashJoinRel_JOIN_TYPE_INNER,
-		LeftKeys: []*proto.Expression_FieldReference{
-			keyRef(t, left, 0).ToProtoFieldRef(), keyRef(t, left, 1).ToProtoFieldRef()},
-		RightKeys: []*proto.Expression_FieldReference{
-			keyRef(t, right, 2).ToProtoFieldRef(), keyRef(t, right, 0).ToProtoFieldRef()},
+		Common:    &proto.RelCommon{},
+		Left:      scanProtoRel("L"),
+		Right:     scanProtoRel("R"),
+		Type:      proto.HashJoinRel_JOIN_TYPE_INNER,
+		LeftKeys:  []*proto.Expression_FieldReference{fieldRefProto(0), fieldRefProto(1)},
+		RightKeys: []*proto.Expression_FieldReference{fieldRefProto(2), fieldRefProto(0)},
 	}}}
 
 	rel, err := RelFromProto(legacy, reg)
 	require.NoError(t, err)
 	assertConsumedLegacyKeys(t, rel.(*HashJoinRel).Keys())
-
-	hj := rel.ToProto().GetHashJoin()
-	assert.Len(t, hj.GetKeys(), 2)
-	assert.Len(t, hj.GetLeftKeys(), 2)
-	assert.Len(t, hj.GetRightKeys(), 2)
 }
 
 // As TestHashJoinConsumesLegacyKeys, but for merge joins.
 func TestMergeJoinConsumesLegacyKeys(t *testing.T) {
-	left, right := joinInputs()
 	reg := joinTestRegistry()
-
 	legacy := &proto.Rel{RelType: &proto.Rel_MergeJoin{MergeJoin: &proto.MergeJoinRel{
-		Common: &proto.RelCommon{},
-		Left:   left.ToProto(),
-		Right:  right.ToProto(),
-		Type:   proto.MergeJoinRel_JOIN_TYPE_INNER,
-		LeftKeys: []*proto.Expression_FieldReference{
-			keyRef(t, left, 0).ToProtoFieldRef(), keyRef(t, left, 1).ToProtoFieldRef()},
-		RightKeys: []*proto.Expression_FieldReference{
-			keyRef(t, right, 2).ToProtoFieldRef(), keyRef(t, right, 0).ToProtoFieldRef()},
+		Common:    &proto.RelCommon{},
+		Left:      scanProtoRel("L"),
+		Right:     scanProtoRel("R"),
+		Type:      proto.MergeJoinRel_JOIN_TYPE_INNER,
+		LeftKeys:  []*proto.Expression_FieldReference{fieldRefProto(0), fieldRefProto(1)},
+		RightKeys: []*proto.Expression_FieldReference{fieldRefProto(2), fieldRefProto(0)},
 	}}}
 
 	rel, err := RelFromProto(legacy, reg)
 	require.NoError(t, err)
 	assertConsumedLegacyKeys(t, rel.(*MergeJoinRel).Keys())
-
-	mj := rel.ToProto().GetMergeJoin()
-	assert.Len(t, mj.GetKeys(), 2)
-	assert.Len(t, mj.GetLeftKeys(), 2)
-	assert.Len(t, mj.GetRightKeys(), 2)
 }
 
-// When both the deprecated fields and the new keys are present, keys wins.
+// When both the deprecated fields and the new keys are present, the new keys win.
 func TestJoinPrefersNewKeysOverDeprecated(t *testing.T) {
-	left, right := joinInputs()
 	reg := joinTestRegistry()
-	keys := eqKeys(t, left, right)
+	newKeys := []*proto.ComparisonJoinKey{
+		{Left: fieldRefProto(0), Right: fieldRefProto(2), Comparison: eqComparisonProto()},
+		{Left: fieldRefProto(1), Right: fieldRefProto(0), Comparison: eqComparisonProto()},
+	}
+	// Bogus deprecated keys pointing at different fields than the real keys.
+	bogusLeft := []*proto.Expression_FieldReference{fieldRefProto(2)}
+	bogusRight := []*proto.Expression_FieldReference{fieldRefProto(1)}
 
-	bogusLeft := []*proto.Expression_FieldReference{keyRef(t, left, 2).ToProtoFieldRef()}
-	bogusRight := []*proto.Expression_FieldReference{keyRef(t, right, 1).ToProtoFieldRef()}
+	assertNewKeysWon := func(t *testing.T, keys []*ComparisonJoinKey) {
+		t.Helper()
+		require.Len(t, keys, 2)
+		assert.Equal(t, int32(0), fieldIndex(t, keys[0].Left()))
+		assert.Equal(t, int32(1), fieldIndex(t, keys[1].Left()))
+	}
 
 	t.Run("hash", func(t *testing.T) {
 		both := &proto.Rel{RelType: &proto.Rel_HashJoin{HashJoin: &proto.HashJoinRel{
-			Common: &proto.RelCommon{},
-			Left:   left.ToProto(),
-			Right:  right.ToProto(),
-			Type:   proto.HashJoinRel_JOIN_TYPE_INNER,
-			Keys:   comparisonJoinKeysToProto(keys),
-			// Bogus deprecated keys pointing at different fields than the real keys.
+			Common:    &proto.RelCommon{},
+			Left:      scanProtoRel("L"),
+			Right:     scanProtoRel("R"),
+			Type:      proto.HashJoinRel_JOIN_TYPE_INNER,
+			Keys:      newKeys,
 			LeftKeys:  bogusLeft,
 			RightKeys: bogusRight,
 		}}}
-
 		rel, err := RelFromProto(both, reg)
 		require.NoError(t, err)
-		got := rel.ToProto().GetHashJoin().GetKeys()
-		if diff := cmp.Diff(comparisonJoinKeysToProto(keys), got, protocmp.Transform()); diff != "" {
-			t.Errorf("expected new keys to win, diff:\n%v", diff)
-		}
+		assertNewKeysWon(t, rel.(*HashJoinRel).Keys())
 	})
 
 	t.Run("merge", func(t *testing.T) {
 		both := &proto.Rel{RelType: &proto.Rel_MergeJoin{MergeJoin: &proto.MergeJoinRel{
-			Common: &proto.RelCommon{},
-			Left:   left.ToProto(),
-			Right:  right.ToProto(),
-			Type:   proto.MergeJoinRel_JOIN_TYPE_INNER,
-			Keys:   comparisonJoinKeysToProto(keys),
-			// Bogus deprecated keys pointing at different fields than the real keys.
+			Common:    &proto.RelCommon{},
+			Left:      scanProtoRel("L"),
+			Right:     scanProtoRel("R"),
+			Type:      proto.MergeJoinRel_JOIN_TYPE_INNER,
+			Keys:      newKeys,
 			LeftKeys:  bogusLeft,
 			RightKeys: bogusRight,
 		}}}
-
 		rel, err := RelFromProto(both, reg)
 		require.NoError(t, err)
-		got := rel.ToProto().GetMergeJoin().GetKeys()
-		if diff := cmp.Diff(comparisonJoinKeysToProto(keys), got, protocmp.Transform()); diff != "" {
-			t.Errorf("expected new keys to win, diff:\n%v", diff)
-		}
+		assertNewKeysWon(t, rel.(*MergeJoinRel).Keys())
 	})
-}
-
-// Equality, non-EQ simple comparisons and custom comparison functions all
-// survive a round trip through proto.
-func TestJoinKeysRoundTrip(t *testing.T) {
-	left, right := joinInputs()
-	reg := joinTestRegistry()
-
-	keys := []*ComparisonJoinKey{
-		NewEqualityJoinKey(keyRef(t, left, 0), keyRef(t, right, 2)),
-		NewComparisonJoinKey(keyRef(t, left, 1), keyRef(t, right, 0),
-			SimpleComparison{Type: SimpleComparisonTypeIsNotDistinctFrom}),
-		NewComparisonJoinKey(keyRef(t, left, 2), keyRef(t, right, 1),
-			CustomComparison{FunctionReference: 42}),
-	}
-
-	for _, tc := range []struct {
-		name string
-		rel  Rel
-	}{
-		{"hash", &HashJoinRel{left: left, right: right, joinType: HashMergeInner, keys: keys}},
-		{"merge", &MergeJoinRel{left: left, right: right, joinType: HashMergeInner, keys: keys}},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			out := tc.rel.ToProto()
-			roundTripped, err := RelFromProto(out, reg)
-			require.NoError(t, err)
-
-			if diff := cmp.Diff(out, roundTripped.ToProto(), protocmp.Transform()); diff != "" {
-				t.Errorf("join did not round trip, diff:\n%v", diff)
-			}
-
-			// The comparison kinds are preserved on the model side.
-			var gotKeys []*ComparisonJoinKey
-			switch r := roundTripped.(type) {
-			case *HashJoinRel:
-				gotKeys = r.Keys()
-			case *MergeJoinRel:
-				gotKeys = r.Keys()
-			}
-			require.Len(t, gotKeys, 3)
-			assert.Equal(t, SimpleComparison{Type: SimpleComparisonTypeEq}, gotKeys[0].Comparison())
-			assert.Equal(t, SimpleComparison{Type: SimpleComparisonTypeIsNotDistinctFrom}, gotKeys[1].Comparison())
-			assert.Equal(t, CustomComparison{FunctionReference: 42}, gotKeys[2].Comparison())
-		})
-	}
 }
 
 // badFieldRef builds a proto field reference to an out-of-range struct field,
 // which fails to resolve against the join inputs' three-column schema.
 func badFieldRef() *proto.Expression_FieldReference {
-	return &proto.Expression_FieldReference{
-		ReferenceType: &proto.Expression_FieldReference_DirectReference{
-			DirectReference: &proto.Expression_ReferenceSegment{
-				ReferenceType: &proto.Expression_ReferenceSegment_StructField_{
-					StructField: &proto.Expression_ReferenceSegment_StructField{Field: 99},
-				},
-			},
-		},
-		RootType: &proto.Expression_FieldReference_RootReference_{
-			RootReference: &proto.Expression_FieldReference_RootReference{},
-		},
-	}
+	return fieldRefProto(99)
 }
 
 // joinFields holds the key-bearing fields shared by HashJoinRel and
@@ -316,18 +219,18 @@ type joinFields struct {
 	rightKeys []*proto.Expression_FieldReference
 }
 
-func (f joinFields) hashProto(left, right Rel) *proto.Rel {
+func (f joinFields) hashProto() *proto.Rel {
 	return &proto.Rel{RelType: &proto.Rel_HashJoin{HashJoin: &proto.HashJoinRel{
 		Common: &proto.RelCommon{}, Type: proto.HashJoinRel_JOIN_TYPE_INNER,
-		Left: left.ToProto(), Right: right.ToProto(),
+		Left: scanProtoRel("L"), Right: scanProtoRel("R"),
 		Keys: f.keys, LeftKeys: f.leftKeys, RightKeys: f.rightKeys,
 	}}}
 }
 
-func (f joinFields) mergeProto(left, right Rel) *proto.Rel {
+func (f joinFields) mergeProto() *proto.Rel {
 	return &proto.Rel{RelType: &proto.Rel_MergeJoin{MergeJoin: &proto.MergeJoinRel{
 		Common: &proto.RelCommon{}, Type: proto.MergeJoinRel_JOIN_TYPE_INNER,
-		Left: left.ToProto(), Right: right.ToProto(),
+		Left: scanProtoRel("L"), Right: scanProtoRel("R"),
 		Keys: f.keys, LeftKeys: f.leftKeys, RightKeys: f.rightKeys,
 	}}}
 }
@@ -335,11 +238,10 @@ func (f joinFields) mergeProto(left, right Rel) *proto.Rel {
 // Error paths in comparisonJoinKeysFromProto / joinKeyComparisonFromProto,
 // exercised against both hash and merge joins.
 func TestJoinKeysFromProtoErrors(t *testing.T) {
-	left, right := joinInputs()
 	reg := joinTestRegistry()
-	goodLeft := keyRef(t, left, 0).ToProtoFieldRef()
-	goodRight := keyRef(t, right, 0).ToProtoFieldRef()
-	eq := SimpleComparison{Type: SimpleComparisonTypeEq}.toProto()
+	goodLeft := fieldRefProto(0)
+	goodRight := fieldRefProto(0)
+	eq := eqComparisonProto()
 
 	for _, tc := range []struct {
 		name   string
@@ -371,11 +273,11 @@ func TestJoinKeysFromProtoErrors(t *testing.T) {
 		},
 	} {
 		t.Run("hash/"+tc.name, func(t *testing.T) {
-			_, err := RelFromProto(tc.fields.hashProto(left, right), reg)
+			_, err := RelFromProto(tc.fields.hashProto(), reg)
 			require.Error(t, err)
 		})
 		t.Run("merge/"+tc.name, func(t *testing.T) {
-			_, err := RelFromProto(tc.fields.mergeProto(left, right), reg)
+			_, err := RelFromProto(tc.fields.mergeProto(), reg)
 			require.Error(t, err)
 		})
 	}

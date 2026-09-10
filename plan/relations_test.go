@@ -496,7 +496,7 @@ func TestRelations_AdvancedExtensions(t *testing.T) {
 		icebergTableReadRel,
 	}
 
-	val1, err := anypb.New(expr.NewPrimitiveLiteral("foo", false).ToProto())
+	val1, err := anypb.New(&proto.Expression{RexType: &proto.Expression_Literal_{Literal: &proto.Expression_Literal{LiteralType: &proto.Expression_Literal_String_{String_: "foo"}}}})
 	assert.NoError(t, err)
 
 	exampleAdvancedExtension1 := &extensions.AdvancedExtension{
@@ -504,7 +504,7 @@ func TestRelations_AdvancedExtensions(t *testing.T) {
 		Enhancement:  val1,
 	}
 
-	val2, err := anypb.New(expr.NewPrimitiveLiteral("bar", false).ToProto())
+	val2, err := anypb.New(&proto.Expression{RexType: &proto.Expression_Literal_{Literal: &proto.Expression_Literal{LiteralType: &proto.Expression_Literal_String_{String_: "bar"}}}})
 	assert.NoError(t, err)
 
 	exampleAdvancedExtension2 := &extensions.AdvancedExtension{
