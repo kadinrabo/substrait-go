@@ -12,6 +12,7 @@ import (
 	"github.com/substrait-io/substrait-go/v9/extensions"
 	"github.com/substrait-io/substrait-go/v9/plan"
 	"github.com/substrait-io/substrait-go/v9/types"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	substraitproto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -32,7 +33,7 @@ func TestDynamicParameterPlanRoundtrip(t *testing.T) {
 			p, err := plan.FromProto(&protoPlan, extensions.GetDefaultCollectionWithNoError())
 			require.NoError(t, err)
 
-			backToProto, err := p.ToProto()
+			backToProto, err := wire.PlanToProto(p)
 			require.NoError(t, err)
 			assert.Truef(t, proto.Equal(&protoPlan, backToProto),
 				"expected: %s\ngot: %s",
@@ -58,7 +59,7 @@ func TestDynamicParameterPlanWithoutBindings(t *testing.T) {
 
 	assert.Empty(t, p.ParameterBindings())
 
-	protoPlan, err := p.ToProto()
+	protoPlan, err := wire.PlanToProto(p)
 	require.NoError(t, err)
 	assert.Empty(t, protoPlan.ParameterBindings)
 }

@@ -127,14 +127,6 @@ func (r *Relation) IsRoot() bool {
 func (r *Relation) Root() *Root { return r.root }
 func (r *Relation) Rel() Rel    { return r.rel }
 
-func (r *Relation) ToProto() *proto.PlanRel {
-	if r.IsRoot() {
-		return r.root.ToProtoPlanRel()
-	}
-
-	return r.rel.ToProtoPlanRel()
-}
-
 type AdvancedExtension interface {
 	GetEnhancement() *anypb.Any
 	GetOptimization() []*anypb.Any
@@ -175,6 +167,10 @@ func (p *Plan) ExpectedTypeURLs() []string {
 // AdvancedExtension returns optional additional extensions associated with
 // this plan such as optimizations or enhancements.
 func (p *Plan) AdvancedExtension() AdvancedExtension { return p.advExtension }
+
+// GetAdvancedExtension returns the plan's advanced extension as its concrete
+// type, matching the accessor the relations expose.
+func (p *Plan) GetAdvancedExtension() *extensions.AdvancedExtension { return p.advExtension }
 
 // Relations returns the full slice of relation trees that are in this plan.
 //
@@ -263,35 +259,6 @@ func FromProtoWithDecoder(plan *proto.Plan, c *extensions.Collection, decoders m
 	return ret, nil
 }
 
-func (p *Plan) ToProto() (*proto.Plan, error) {
-	urns, decls := p.reg.ExtensionsToProto()
-	relations := make([]*proto.PlanRel, len(p.relations))
-	for i, r := range p.relations {
-		relations[i] = r.ToProto()
-	}
-
-	var bindings []*proto.DynamicParameterBinding
-	if len(p.parameterBindings) > 0 {
-		bindings = make([]*proto.DynamicParameterBinding, len(p.parameterBindings))
-		for i, b := range p.parameterBindings {
-			bindings[i] = &proto.DynamicParameterBinding{
-				ParameterAnchor: b.ParameterAnchor,
-				Value:           b.Value.ToProtoLiteral(),
-			}
-		}
-	}
-
-	return &proto.Plan{
-		Version:            types.VersionToProto(p.version),
-		ExpectedTypeUrls:   p.expectedTypeURLs,
-		AdvancedExtensions: p.advExtension,
-		Relations:          relations,
-		Extensions:         decls,
-		ExtensionUrns:      urns,
-		ParameterBindings:  bindings,
-	}, nil
-}
-
 // validateRootNamesForSchema checks that the number of root output names
 // matches the depth-first field count of the given record type.
 // Per the spec, root relations have field names (https://substrait.io/faq).
@@ -336,17 +303,6 @@ func (r *Root) Input() Rel { return r.input }
 
 // Names are the field names in depth-first order.
 func (r *Root) Names() []string { return r.names }
-
-func (r *Root) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Root{
-			Root: &proto.RelRoot{
-				Input: r.input.ToProto(),
-				Names: r.names,
-			},
-		},
-	}
-}
 
 func (r *Root) RecordType() types.NamedStruct {
 	return types.NamedStruct{
@@ -410,9 +366,6 @@ type Rel interface {
 	GetAdvancedExtension() *extensions.AdvancedExtension
 	// SetAdvancedExtension sets an AdvancedExtension on this Rel, returning any existing one on this Rel. Use `nil` to remove any existing AdvancedExtension.
 	SetAdvancedExtension(extension *extensions.AdvancedExtension) (existing *extensions.AdvancedExtension)
-
-	ToProto() *proto.Rel
-	ToProtoPlanRel() *proto.PlanRel
 
 	// Copy creates a copy of this relation with new inputs
 	Copy(newInputs ...Rel) (Rel, error)

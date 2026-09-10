@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/substrait-io/substrait-go/v9/extensions"
 	"github.com/substrait-io/substrait-go/v9/plan"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	substraitproto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 )
 
@@ -19,7 +20,7 @@ func TestPlanWithoutAVersion(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "0.0.0 (UNSET)", p.Version().String())
 
-	roundTrip, err := p.ToProto()
+	roundTrip, err := wire.PlanToProto(p)
 	require.NoError(t, err)
 	assert.Equal(t, "UNSET", roundTrip.Version.GetProducer())
 }
@@ -33,7 +34,7 @@ func TestPlanToProtoCopiesTheVersion(t *testing.T) {
 	p, err := b.Plan(b.NamedScan([]string{"test"}, baseSchema), []string{"a", "b"})
 	require.NoError(t, err)
 
-	protoPlan, err := p.ToProto()
+	protoPlan, err := wire.PlanToProto(p)
 	require.NoError(t, err)
 	require.Equal(t, producer, protoPlan.Version.Producer)
 
