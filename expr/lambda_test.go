@@ -14,6 +14,7 @@ import (
 	"github.com/substrait-io/substrait-go/v9/literal"
 	"github.com/substrait-io/substrait-go/v9/plan"
 	"github.com/substrait-io/substrait-go/v9/types"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 	"google.golang.org/protobuf/encoding/protojson"
 	pb "google.golang.org/protobuf/proto"
@@ -96,7 +97,7 @@ func TestLambdaProtoRoundTrip(t *testing.T) {
 			goPlan, err := plan.FromProto(&originalPlan, collection)
 			require.NoError(t, err)
 
-			resultPlan, err := goPlan.ToProto()
+			resultPlan, err := wire.PlanToProto(goPlan)
 			require.NoError(t, err)
 
 			require.True(t, pb.Equal(&originalPlan, resultPlan))

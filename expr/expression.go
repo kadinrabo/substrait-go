@@ -404,7 +404,6 @@ type Expression interface {
 	GetType() types.Type
 	// ToProto converts this Expression and its arguments
 	// to the equivalent Protobuf objects.
-	ToProto() *proto.Expression
 	// Equals returns true if this expression and all of its
 	// arguments and their children etc. are equal to the passed
 	// in Expression.
@@ -536,29 +535,6 @@ func (ex *IfThen) GetType() types.Type {
 	return ex.elseClause.GetType()
 }
 
-func (ex *IfThen) ToProto() *proto.Expression {
-	ifthenClauses := make([]*proto.Expression_IfThen_IfClause, len(ex.ifs))
-	for i, c := range ex.ifs {
-		ifthenClauses[i] = &proto.Expression_IfThen_IfClause{
-			If:   c.If.ToProto(),
-			Then: c.Then.ToProto(),
-		}
-	}
-
-	var elseClause *proto.Expression
-	if ex.elseClause != nil {
-		elseClause = ex.elseClause.ToProto()
-	}
-	return &proto.Expression{
-		RexType: &proto.Expression_IfThen_{
-			IfThen: &proto.Expression_IfThen{
-				Ifs:  ifthenClauses,
-				Else: elseClause,
-			},
-		},
-	}
-}
-
 func (ex *IfThen) Equals(other Expression) bool {
 	rhs, ok := other.(*IfThen)
 	if !ok {
@@ -629,18 +605,6 @@ func (ex *Cast) GetType() types.Type {
 	return ex.Type
 }
 
-func (ex *Cast) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_Cast_{
-			Cast: &proto.Expression_Cast{
-				Type:            types.TypeToProto(ex.Type),
-				Input:           ex.Input.ToProto(),
-				FailureBehavior: proto.Expression_Cast_FailureBehavior(ex.FailureBehavior),
-			},
-		},
-	}
-}
-
 func (ex *Cast) Equals(other Expression) bool {
 	rhs, ok := other.(*Cast)
 	if !ok {
@@ -675,17 +639,6 @@ func (dp *DynamicParameter) isRootRef() {}
 func (dp *DynamicParameter) IsScalar() bool { return true }
 
 func (dp *DynamicParameter) GetType() types.Type { return dp.OutputType }
-
-func (dp *DynamicParameter) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_DynamicParameter{
-			DynamicParameter: &proto.DynamicParameter{
-				Type:               types.TypeToProto(dp.OutputType),
-				ParameterReference: dp.ParameterReference,
-			},
-		},
-	}
-}
 
 func (dp *DynamicParameter) Equals(other Expression) bool {
 	rhs, ok := other.(*DynamicParameter)
@@ -849,31 +802,6 @@ func (ex *SwitchExpr) GetType() types.Type {
 	return ex.elseClause.GetType()
 }
 
-func (ex *SwitchExpr) ToProto() *proto.Expression {
-	var elseExpr *proto.Expression
-	if ex.elseClause != nil {
-		elseExpr = ex.elseClause.ToProto()
-	}
-
-	cases := make([]*proto.Expression_SwitchExpression_IfValue, len(ex.ifs))
-	for i, c := range ex.ifs {
-		cases[i] = &proto.Expression_SwitchExpression_IfValue{
-			If:   c.If.ToProtoLiteral(),
-			Then: c.Then.ToProto(),
-		}
-	}
-
-	return &proto.Expression{
-		RexType: &proto.Expression_SwitchExpression_{
-			SwitchExpression: &proto.Expression_SwitchExpression{
-				Match: ex.match.ToProto(),
-				Ifs:   cases,
-				Else:  elseExpr,
-			},
-		},
-	}
-}
-
 func (ex *SwitchExpr) Equals(other Expression) bool {
 	rhs, ok := other.(*SwitchExpr)
 	if !ok {
@@ -990,21 +918,6 @@ func (ex *SingularOrList) GetType() types.Type {
 	return &types.BooleanType{Nullability: types.NullabilityRequired}
 }
 
-func (ex *SingularOrList) ToProto() *proto.Expression {
-	opts := make([]*proto.Expression, len(ex.Options))
-	for i, o := range ex.Options {
-		opts[i] = o.ToProto()
-	}
-	return &proto.Expression{
-		RexType: &proto.Expression_SingularOrList_{
-			SingularOrList: &proto.Expression_SingularOrList{
-				Value:   ex.Value.ToProto(),
-				Options: opts,
-			},
-		},
-	}
-}
-
 func (ex *SingularOrList) Equals(other Expression) bool {
 	rhs, ok := other.(*SingularOrList)
 	if !ok {
@@ -1099,32 +1012,6 @@ func (ex *MultiOrList) IsScalar() bool {
 
 func (ex *MultiOrList) GetType() types.Type {
 	return &types.BooleanType{Nullability: types.NullabilityRequired}
-}
-
-func (ex *MultiOrList) ToProto() *proto.Expression {
-	toSlice := func(exprs []Expression) (out []*proto.Expression) {
-		out = make([]*proto.Expression, len(exprs))
-		for i, e := range exprs {
-			out[i] = e.ToProto()
-		}
-		return
-	}
-
-	opts := make([]*proto.Expression_MultiOrList_Record, len(ex.Options))
-	for i, o := range ex.Options {
-		opts[i] = &proto.Expression_MultiOrList_Record{
-			Fields: toSlice(o),
-		}
-	}
-
-	return &proto.Expression{
-		RexType: &proto.Expression_MultiOrList_{
-			MultiOrList: &proto.Expression_MultiOrList{
-				Value:   toSlice(ex.Value),
-				Options: opts,
-			},
-		},
-	}
 }
 
 func (ex *MultiOrList) Equals(other Expression) bool {
@@ -1254,29 +1141,6 @@ func (ex *MapExpr) GetType() types.Type {
 	}
 }
 
-func (ex *MapExpr) ToProto() *proto.Expression {
-	kvs := make([]*proto.Expression_Nested_Map_KeyValue, len(ex.KeyValues))
-	for i, kv := range ex.KeyValues {
-		kvs[i] = &proto.Expression_Nested_Map_KeyValue{
-			Key:   kv.Key.ToProto(),
-			Value: kv.Value.ToProto(),
-		}
-	}
-	return &proto.Expression{
-		RexType: &proto.Expression_Nested_{
-			Nested: &proto.Expression_Nested{
-				Nullable:               ex.Nullable,
-				TypeVariationReference: ex.TypeVariationRef,
-				NestedType: &proto.Expression_Nested_Map_{
-					Map: &proto.Expression_Nested_Map{
-						KeyValues: kvs,
-					},
-				},
-			},
-		},
-	}
-}
-
 func (ex *MapExpr) Equals(other Expression) bool {
 	rhs, ok := other.(*MapExpr)
 	if !ok {
@@ -1373,26 +1237,6 @@ func (ex *StructExpr) GetType() types.Type {
 	}
 }
 
-func (ex *StructExpr) ToProto() *proto.Expression {
-	fields := make([]*proto.Expression, len(ex.Fields))
-	for i, f := range ex.Fields {
-		fields[i] = f.ToProto()
-	}
-	return &proto.Expression{
-		RexType: &proto.Expression_Nested_{
-			Nested: &proto.Expression_Nested{
-				Nullable:               ex.Nullable,
-				TypeVariationReference: ex.TypeVariationRef,
-				NestedType: &proto.Expression_Nested_Struct_{
-					Struct: &proto.Expression_Nested_Struct{
-						Fields: fields,
-					},
-				},
-			},
-		},
-	}
-}
-
 func (ex *StructExpr) Equals(other Expression) bool {
 	rhs, ok := other.(*StructExpr)
 	if !ok {
@@ -1484,26 +1328,6 @@ func (ex *ListExpr) GetType() types.Type {
 	}
 }
 
-func (ex *ListExpr) ToProto() *proto.Expression {
-	vals := make([]*proto.Expression, len(ex.Values))
-	for i, v := range ex.Values {
-		vals[i] = v.ToProto()
-	}
-	return &proto.Expression{
-		RexType: &proto.Expression_Nested_{
-			Nested: &proto.Expression_Nested{
-				Nullable:               ex.Nullable,
-				TypeVariationReference: ex.TypeVariationRef,
-				NestedType: &proto.Expression_Nested_List_{
-					List: &proto.Expression_Nested_List{
-						Values: vals,
-					},
-				},
-			},
-		},
-	}
-}
-
 func (ex *ListExpr) Equals(other Expression) bool {
 	rhs, ok := other.(*ListExpr)
 	if !ok {
@@ -1558,22 +1382,6 @@ func NewExpressionReference(names []string, ex Expression) ExpressionReference {
 
 func NewMeasureReference(names []string, measure *AggregateFunction) ExpressionReference {
 	return ExpressionReference{OutputNames: names, measure: measure}
-}
-
-func (er *ExpressionReference) ToProto() *proto.ExpressionReference {
-	out := &proto.ExpressionReference{OutputNames: er.OutputNames}
-	switch {
-	case er.expr != nil:
-		out.ExprType = &proto.ExpressionReference_Expression{
-			Expression: er.expr.ToProto(),
-		}
-	case er.measure != nil:
-		out.ExprType = &proto.ExpressionReference_Measure{
-			Measure: er.measure.ToProto(),
-		}
-	}
-
-	return out
 }
 
 func (er *ExpressionReference) SetExpr(ex Expression) {
@@ -1642,30 +1450,4 @@ func ExtendedFromProto(ex *proto.ExtendedExpression, c *extensions.Collection) (
 	}, nil
 }
 
-func (ex *Extended) ToProto() *proto.ExtendedExpression {
-	urns, decls := ex.reg.ExtensionsToProto()
-	refs := make([]*proto.ExpressionReference, len(ex.ReferredExpr))
-	for i, ref := range ex.ReferredExpr {
-		refs[i] = ref.ToProto()
-	}
-
-	return &proto.ExtendedExpression{
-		Version:            types.VersionToProto(ex.Version),
-		ExtensionUrns:      urns,
-		Extensions:         decls,
-		BaseSchema:         ex.BaseSchema.ToProto(),
-		AdvancedExtensions: ex.AdvancedExts,
-		ExpectedTypeUrls:   ex.ExpectedTypeURLs,
-		ReferredExpr:       refs,
-	}
-}
-
-func (s VirtualTableExpressionValue) ToProto() *proto.Expression_Nested_Struct {
-	fields := make([]*proto.Expression, len(s))
-	for i, f := range s {
-		fields[i] = f.ToProto()
-	}
-	return &proto.Expression_Nested_Struct{
-		Fields: fields,
-	}
-}
+func (ex *Extended) Registry() *ExtensionRegistry { return &ex.reg }

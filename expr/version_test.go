@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/substrait-io/substrait-go/v9/expr"
 	ext "github.com/substrait-io/substrait-go/v9/extensions"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 )
 
@@ -18,5 +19,5 @@ func TestExtendedWithoutAVersion(t *testing.T) {
 	result, err := expr.ExtendedFromProto(&proto.ExtendedExpression{}, ext.GetDefaultCollectionWithNoError())
 	require.NoError(t, err)
 	assert.Equal(t, "0.0.0 (UNSET)", result.Version.String())
-	assert.Equal(t, "UNSET", result.ToProto().Version.GetProducer())
+	assert.Equal(t, "UNSET", wire.ExtendedToProto(result).Version.GetProducer())
 }
