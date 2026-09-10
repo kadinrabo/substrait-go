@@ -21,6 +21,7 @@ import (
 	"github.com/substrait-io/substrait-go/v9/plan"
 	"github.com/substrait-io/substrait-go/v9/types"
 	"github.com/substrait-io/substrait-go/v9/types/parser"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 	"google.golang.org/protobuf/encoding/protojson"
 	pb "google.golang.org/protobuf/proto"
@@ -123,7 +124,7 @@ func ExampleExpression_scalarFunction() {
 		refArg, expr.NewPrimitiveLiteral(float64(10), false))
 
 	// call ToProto to convert our manual expression to proto.Expression
-	toProto := ex.ToProto()
+	toProto := wire.ExprToProto(ex)
 
 	// output some info!
 
@@ -241,7 +242,7 @@ func TestExpressionsRoundtrip(t *testing.T) {
 	}
 
 	for _, exp := range tests {
-		protoExpr := exp.ToProto()
+		protoExpr := wire.ExprToProto(exp)
 		out, err := expr.ExprFromProto(protoExpr, nil, reg)
 		require.NoError(t, err)
 		assert.Truef(t, exp.Equals(out), "expected: %s\ngot: %s", exp, out)
@@ -440,7 +441,7 @@ func TestRoundTripUsingTestData(t *testing.T) {
 			e, err := expr.ExprFromProto(&ex, types.NewRecordTypeFromStruct(baseSchema.Struct), reg)
 			require.NoError(t, err)
 
-			result := e.ToProto()
+			result := wire.ExprToProto(e)
 			assert.Truef(t, pb.Equal(&ex, result), "expected: %s\ngot: %s", &ex, result)
 
 			assert.True(t, e.Equals(e))
@@ -484,7 +485,7 @@ func TestRoundTripExtendedExpression(t *testing.T) {
 		result, err := expr.ExtendedFromProto(&ex, ext.GetDefaultCollectionWithNoError())
 		require.NoError(t, err)
 
-		out := result.ToProto()
+		out := wire.ExtendedToProto(result)
 		// because we read the extensions into a map, we can't guarantee
 		// the order of the extensions. But we also don't care about the
 		// order, so we can just sort them by functionAnchor to ensure
@@ -520,7 +521,7 @@ func TestCastVisit(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			visitedCastExpr := castExpr.Visit(tc.rewriteFunction)
-			visitedCastProto := visitedCastExpr.ToProto()
+			visitedCastProto := wire.ExprToProto(visitedCastExpr)
 			assert.IsType(t, &proto.Expression_Cast_{}, visitedCastProto.GetRexType())
 			assert.Equal(t, tc.want, visitedCastProto.GetCast().GetInput().GetLiteral().GetFp64())
 		})
@@ -660,7 +661,7 @@ func TestSubqueryExpressionRoundtrip(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Convert expression to protobuf
-			protoExpr := tt.subExpr.ToProto()
+			protoExpr := wire.ExprToProto(tt.subExpr)
 			require.NotNil(t, protoExpr)
 			require.NotNil(t, protoExpr.GetSubquery())
 
@@ -683,7 +684,7 @@ func TestSubqueryExpressionRoundtrip(t *testing.T) {
 			}
 
 			// Verify protobuf roundtrip
-			roundtripProto := fromProto.ToProto()
+			roundtripProto := wire.ExprToProto(fromProto)
 			assert.True(t, pb.Equal(protoExpr, roundtripProto), "protobuf roundtrip failed")
 
 			// Verify basic properties
