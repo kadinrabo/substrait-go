@@ -71,12 +71,6 @@ func (l *Lambda) ToProto() *proto.Expression {
 	}
 }
 
-func (l *Lambda) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{Value: l.ToProto()},
-	}
-}
-
 func (l *Lambda) Visit(visit VisitFunc) Expression {
 	newBody := visit(l.Body)
 	if newBody == l.Body {

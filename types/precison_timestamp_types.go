@@ -113,12 +113,6 @@ func (m *PrecisionTimestampType) Equals(rhs Type) bool {
 	return false
 }
 
-func (m *PrecisionTimestampType) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Type{Type: m.ToProto()},
-	}
-}
-
 func (m *PrecisionTimestampType) ToProto() *proto.Type {
 	return &proto.Type{Kind: &proto.Type_PrecisionTimestamp_{
 		PrecisionTimestamp: &proto.Type_PrecisionTimestamp{
@@ -167,12 +161,6 @@ func NewPrecisionTimestampTzType(precision TimePrecision) *PrecisionTimestampTzT
 			Precision:   precision,
 			Nullability: NullabilityNullable,
 		},
-	}
-}
-
-func (m *PrecisionTimestampTzType) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Type{Type: m.ToProto()},
 	}
 }
 
@@ -267,12 +255,6 @@ func (m *PrecisionTimeType) Equals(rhs Type) bool {
 		return *o == *m
 	}
 	return false
-}
-
-func (m *PrecisionTimeType) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Type{Type: m.ToProto()},
-	}
 }
 
 func (m *PrecisionTimeType) ToProto() *proto.Type {

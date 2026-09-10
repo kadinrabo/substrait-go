@@ -640,11 +640,6 @@ func (f *FieldReference) String() string {
 	return b.String() + f.Reference.(ReferenceSegment).String() + typ
 }
 
-func (f *FieldReference) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{Value: f.ToProto()},
-	}
-}
 func (f *FieldReference) ToProtoFieldRef() *proto.Expression_FieldReference {
 	ret := &proto.Expression_FieldReference{}
 	switch r := f.Reference.(type) {

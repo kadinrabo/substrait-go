@@ -56,12 +56,6 @@ func (m IntervalCompoundType) Equals(rhs Type) bool {
 	return false
 }
 
-func (m IntervalCompoundType) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Type{Type: m.ToProto()},
-	}
-}
-
 func (m IntervalCompoundType) ToProto() *proto.Type {
 	return &proto.Type{Kind: &proto.Type_IntervalCompound_{
 		IntervalCompound: &proto.Type_IntervalCompound{

@@ -41,12 +41,6 @@ func (m IntervalYearToMonthType) Equals(rhs Type) bool {
 	return false
 }
 
-func (m IntervalYearToMonthType) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Type{Type: m.ToProto()},
-	}
-}
-
 func (m IntervalYearToMonthType) ToProto() *proto.Type {
 	return &proto.Type{Kind: &proto.Type_IntervalYear_{
 		IntervalYear: &proto.Type_IntervalYear{

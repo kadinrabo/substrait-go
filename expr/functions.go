@@ -384,13 +384,6 @@ func (s *ScalarFunction) GetArgTypes() []types.Type {
 }
 
 func (s *ScalarFunction) GetType() types.Type { return s.outputType }
-func (s *ScalarFunction) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{
-			Value: s.ToProto(),
-		},
-	}
-}
 
 func (s *ScalarFunction) ToProto() *proto.Expression {
 	args := make([]*proto.FunctionArgument, len(s.args))
@@ -723,14 +716,6 @@ func (w *WindowFunction) ToProto() *proto.Expression {
 				LowerBound:        lowerBound,
 				UpperBound:        upperBound,
 			},
-		},
-	}
-}
-
-func (w *WindowFunction) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{
-			Value: w.ToProto(),
 		},
 	}
 }

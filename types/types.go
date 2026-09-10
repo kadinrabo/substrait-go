@@ -560,7 +560,6 @@ type (
 	// These are the actual arguments for a function present in a plan.
 	FuncArg interface {
 		fmt.Stringer
-		ToProtoFuncArg() *proto.FunctionArgument
 	}
 
 	SortKind interface {
@@ -677,13 +676,6 @@ type EnumType struct {
 	TypeVariationRef uint32
 	Name             string
 	Options          []string
-}
-
-func (e *EnumType) ToProtoFuncArg() *proto.FunctionArgument {
-	// FIXME no proto for enum yet
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Type{Type: TypeToProto(e)},
-	}
 }
 
 func (e *EnumType) isRootRef() {}
@@ -1014,12 +1006,6 @@ func (s *PrimitiveType[T]) Equals(rhs Type) bool {
 	return false
 }
 
-func (s *PrimitiveType[T]) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Type{Type: TypeToProto(s)},
-	}
-}
-
 func (*PrimitiveType[T]) ShortString() string {
 	var z *T
 	if n, ok := shortNames[reflect.TypeOf(z)]; ok {
@@ -1137,12 +1123,6 @@ func (s *FixedLenType[T]) Equals(rhs Type) bool {
 	return false
 }
 
-func (s *FixedLenType[T]) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Type{Type: TypeToProto(s)},
-	}
-}
-
 func (*FixedLenType[T]) ShortString() string {
 	var z *T
 	return shortNames[reflect.TypeOf(z)]
@@ -1207,12 +1187,6 @@ func (s *DecimalType) Equals(rhs Type) bool {
 	}
 
 	return false
-}
-
-func (s *DecimalType) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Type{Type: s.ToProto()},
-	}
 }
 
 func (s *DecimalType) ToProto() *proto.Type {
@@ -1293,12 +1267,6 @@ func (t *StructType) ToProto() *proto.Type {
 		Struct: &proto.Type_Struct{Types: children,
 			TypeVariationReference: t.TypeVariationRef,
 			Nullability:            proto.Type_Nullability(t.Nullability)}}}
-}
-
-func (t *StructType) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Type{Type: t.ToProto()},
-	}
 }
 
 func (*StructType) ShortString() string { return "struct" }
@@ -1432,12 +1400,6 @@ func (f *FuncType) ToProto() *proto.Type {
 		}}}
 }
 
-func (f *FuncType) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Type{Type: f.ToProto()},
-	}
-}
-
 func (*FuncType) ShortString() string { return "func" }
 
 func (f *FuncType) String() string {
@@ -1500,12 +1462,6 @@ func (t *ListType) ToProto() *proto.Type {
 			TypeVariationReference: t.TypeVariationRef}}}
 }
 
-func (t *ListType) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Type{Type: t.ToProto()},
-	}
-}
-
 func (*ListType) ShortString() string { return "list" }
 
 func (t *ListType) String() string {
@@ -1561,12 +1517,6 @@ func (t *MapType) ToProto() *proto.Type {
 			TypeVariationReference: t.TypeVariationRef,
 			Key:                    TypeToProto(t.Key),
 			Value:                  TypeToProto(t.Value)}}}
-}
-
-func (t *MapType) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Type{Type: t.ToProto()},
-	}
 }
 
 func (t *MapType) ShortString() string { return "map" }
@@ -1780,12 +1730,6 @@ func (t *UserDefinedType) ToProto() *proto.Type {
 		}}}
 }
 
-func (t *UserDefinedType) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Type{Type: t.ToProto()},
-	}
-}
-
 // exists for meeting the interface, but the correct short name for
 // a user defined type is "u!name" which requires looking up the
 // type first via the type reference to find the name.
@@ -1793,12 +1737,6 @@ func (*UserDefinedType) ShortString() string { return "" }
 
 func (t *UserDefinedType) String() string {
 	return "user_defined_type"
-}
-
-func (e Enum) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Enum{Enum: string(e)},
-	}
 }
 
 func (e Enum) String() string { return string(e) }

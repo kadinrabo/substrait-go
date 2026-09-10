@@ -33,12 +33,6 @@ func (m *IntervalDayType) Equals(rhs Type) bool {
 	return false
 }
 
-func (m *IntervalDayType) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Type{Type: m.ToProto()},
-	}
-}
-
 func (m *IntervalDayType) ToProto() *proto.Type {
 	precisionVal := m.Precision.ToProtoVal()
 	return &proto.Type{Kind: &proto.Type_IntervalDay_{

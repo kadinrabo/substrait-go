@@ -117,12 +117,6 @@ func (s *ScalarSubquery) ToProto() *proto.Expression {
 	}
 }
 
-func (s *ScalarSubquery) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{Value: s.ToProto()},
-	}
-}
-
 func (s *ScalarSubquery) Equals(other expr.Expression) bool {
 	otherScalar, ok := other.(*ScalarSubquery)
 	if !ok {
@@ -202,12 +196,6 @@ func (s *InPredicateSubquery) ToProto() *proto.Expression {
 				},
 			},
 		},
-	}
-}
-
-func (s *InPredicateSubquery) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{Value: s.ToProto()},
 	}
 }
 
@@ -311,12 +299,6 @@ func (s *SetPredicateSubquery) ToProto() *proto.Expression {
 				},
 			},
 		},
-	}
-}
-
-func (s *SetPredicateSubquery) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{Value: s.ToProto()},
 	}
 }
 
@@ -437,12 +419,6 @@ func (s *SetComparisonSubquery) ToProto() *proto.Expression {
 				},
 			},
 		},
-	}
-}
-
-func (s *SetComparisonSubquery) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{Value: s.ToProto()},
 	}
 }
 

@@ -130,12 +130,6 @@ func (n *NullLiteral) ToProto() *proto.Expression {
 	}
 }
 
-func (n *NullLiteral) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{Value: n.ToProto()},
-	}
-}
-
 func (n *NullLiteral) Equals(rhs Expression) bool {
 	if nl, ok := rhs.(*NullLiteral); ok {
 		return nl.Type.Equals(n.Type)
@@ -229,12 +223,6 @@ func (t *PrimitiveLiteral[T]) Equals(rhs Expression) bool {
 	return false
 }
 
-func (t *PrimitiveLiteral[T]) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{Value: t.ToProto()},
-	}
-}
-
 func (t *PrimitiveLiteral[T]) Visit(VisitFunc) Expression { return t }
 func (*PrimitiveLiteral[T]) IsScalar() bool               { return true }
 
@@ -324,12 +312,6 @@ func (t *NestedLiteral[T]) Equals(rhs Expression) bool {
 	return false
 }
 
-func (t *NestedLiteral[T]) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{Value: t.ToProto()},
-	}
-}
-
 func (t *NestedLiteral[T]) Visit(VisitFunc) Expression {
 	return t
 }
@@ -404,12 +386,6 @@ func (t *MapLiteral) Equals(rhs Expression) bool {
 	return false
 }
 
-func (t *MapLiteral) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{Value: t.ToProto()},
-	}
-}
-
 func (t *MapLiteral) Visit(VisitFunc) Expression { return t }
 func (*MapLiteral) IsScalar() bool               { return true }
 
@@ -472,12 +448,6 @@ func (t *ByteSliceLiteral[T]) Equals(rhs Expression) bool {
 	}
 
 	return false
-}
-
-func (t *ByteSliceLiteral[T]) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{Value: t.ToProto()},
-	}
 }
 
 func (t *ByteSliceLiteral[T]) Visit(VisitFunc) Expression { return t }
@@ -689,12 +659,6 @@ func (t *ProtoLiteral) Equals(rhs Expression) bool {
 			reflect.DeepEqual(t.Value, other.Value)
 	}
 	return false
-}
-
-func (t *ProtoLiteral) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{Value: t.ToProto()},
-	}
 }
 
 func (t *ProtoLiteral) Visit(VisitFunc) Expression { return t }
