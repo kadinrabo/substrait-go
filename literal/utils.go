@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/substrait-io/substrait-go/v9/expr"
 	"github.com/substrait-io/substrait-go/v9/types"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 )
 
@@ -477,11 +478,11 @@ func NewEmptyList(elementType types.Type, nullable bool) (expr.Literal, error) {
 // The structValue contains the field values for the user-defined type.
 // Optional type parameters can be provided for parameterized user-defined types (pass nil for none).
 func NewUserDefinedLiteral(typeRef uint32, structValue expr.StructLiteralValue, nullable bool, typeParams []types.TypeParam) (expr.Literal, error) {
-	structProto := structValue.ToProto()
+	structProto := wire.StructLiteralValueToProto(structValue)
 
 	protoParams := make([]*proto.Type_Parameter, len(typeParams))
 	for i, p := range typeParams {
-		protoParams[i] = p.ToProto()
+		protoParams[i] = wire.TypeParamToProto(p)
 	}
 
 	return expr.NewLiteral(

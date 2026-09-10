@@ -62,17 +62,6 @@ func StructLiteralFromProto(s *proto.Expression_Literal_Struct) StructLiteralVal
 	return fields
 }
 
-func (s StructLiteralValue) ToProto() *proto.Expression_Literal_Struct {
-	fields := make([]*proto.Expression_Literal, len(s))
-	for i, f := range s {
-		fields[i] = f.ToProtoLiteral()
-	}
-
-	return &proto.Expression_Literal_Struct{
-		Fields: fields,
-	}
-}
-
 // Literal represents a specific literal of some type which could also
 // be a typed null or a nested type like a struct/map/list.
 //
@@ -89,8 +78,6 @@ type Literal interface {
 	// Equals only returns true if the rhs is a literal of the exact
 	// same type and value.
 	Equals(Expression) bool
-	ToProto() *proto.Expression
-	ToProtoLiteral() *proto.Expression_Literal
 	Visit(VisitFunc) Expression
 	// ValueString returns a human presentable representation of just the literal's value.
 	ValueString() string
@@ -116,20 +103,6 @@ func (n *NullLiteral) ValueString() string {
 }
 
 func (n *NullLiteral) GetType() types.Type { return n.Type }
-func (n *NullLiteral) ToProtoLiteral() *proto.Expression_Literal {
-	return &proto.Expression_Literal{
-		Nullable:               true,
-		TypeVariationReference: n.Type.GetTypeVariationReference(),
-		LiteralType:            &proto.Expression_Literal_Null{Null: types.TypeToProto(n.Type)},
-	}
-}
-
-func (n *NullLiteral) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_Literal_{Literal: n.ToProtoLiteral()},
-	}
-}
-
 func (n *NullLiteral) Equals(rhs Expression) bool {
 	if nl, ok := rhs.(*NullLiteral); ok {
 		return nl.Type.Equals(n.Type)
@@ -170,52 +143,6 @@ func (t *PrimitiveLiteral[T]) IsoValueString() string {
 }
 
 func (t *PrimitiveLiteral[T]) GetType() types.Type { return t.Type }
-func (t *PrimitiveLiteral[T]) ToProtoLiteral() *proto.Expression_Literal {
-	lit := &proto.Expression_Literal{
-		Nullable:               t.Type.GetNullability() == types.NullabilityNullable,
-		TypeVariationReference: t.Type.GetTypeVariationReference(),
-	}
-
-	switch v := any(t.Value).(type) {
-	case bool:
-		lit.LiteralType = &proto.Expression_Literal_Boolean{Boolean: v}
-	case int8:
-		lit.LiteralType = &proto.Expression_Literal_I8{I8: int32(v)}
-	case int16:
-		lit.LiteralType = &proto.Expression_Literal_I16{I16: int32(v)}
-	case int32:
-		lit.LiteralType = &proto.Expression_Literal_I32{I32: v}
-	case int64:
-		lit.LiteralType = &proto.Expression_Literal_I64{I64: v}
-	case float32:
-		lit.LiteralType = &proto.Expression_Literal_Fp32{Fp32: v}
-	case float64:
-		lit.LiteralType = &proto.Expression_Literal_Fp64{Fp64: v}
-	case string:
-		lit.LiteralType = &proto.Expression_Literal_String_{String_: v}
-	case types.Timestamp:
-		lit.LiteralType = &proto.Expression_Literal_Timestamp{Timestamp: int64(v)}
-	case types.Date:
-		lit.LiteralType = &proto.Expression_Literal_Date{Date: int32(v)}
-	case types.Time:
-		lit.LiteralType = &proto.Expression_Literal_Time{Time: int64(v)}
-	case types.FixedChar:
-		lit.LiteralType = &proto.Expression_Literal_FixedChar{FixedChar: string(v)}
-	case types.TimestampTz:
-		lit.LiteralType = &proto.Expression_Literal_TimestampTz{TimestampTz: int64(v)}
-	default:
-		panic("invalid primitive literal type")
-	}
-
-	return lit
-}
-
-func (t *PrimitiveLiteral[T]) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_Literal_{Literal: t.ToProtoLiteral()},
-	}
-}
-
 func (t *PrimitiveLiteral[T]) Equals(rhs Expression) bool {
 	if other, ok := rhs.(*PrimitiveLiteral[T]); ok {
 		return t.Type.Equals(other.Type) && t.Value == other.Value
@@ -262,47 +189,6 @@ func (t *NestedLiteral[T]) ValueString() string {
 	return fmt.Sprintf("%v", t.Value)
 }
 func (t *NestedLiteral[T]) GetType() types.Type { return t.Type }
-func (t *NestedLiteral[T]) ToProtoLiteral() *proto.Expression_Literal {
-	lit := &proto.Expression_Literal{
-		Nullable:               t.Type.GetNullability() == types.NullabilityNullable,
-		TypeVariationReference: t.Type.GetTypeVariationReference(),
-	}
-
-	vals := make([]*proto.Expression_Literal, len(t.Value))
-	for i, l := range t.Value {
-		vals[i] = l.ToProtoLiteral()
-	}
-
-	switch any(t.Value).(type) {
-	case StructLiteralValue:
-		lit.LiteralType = &proto.Expression_Literal_Struct_{
-			Struct: &proto.Expression_Literal_Struct{
-				Fields: vals,
-			},
-		}
-	case ListLiteralValue:
-		if len(vals) == 0 {
-			lit.LiteralType = &proto.Expression_Literal_EmptyList{
-				EmptyList: types.TypeToProto(t.Type).GetList(),
-			}
-		} else {
-			lit.LiteralType = &proto.Expression_Literal_List_{
-				List: &proto.Expression_Literal_List{
-					Values: vals,
-				},
-			}
-		}
-	}
-
-	return lit
-}
-
-func (t *NestedLiteral[T]) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_Literal_{Literal: t.ToProtoLiteral()},
-	}
-}
-
 func (t *NestedLiteral[T]) Equals(rhs Expression) bool {
 	if other, ok := rhs.(*NestedLiteral[T]); ok {
 		return t.Type.Equals(other.Type) && slices.EqualFunc(t.Value, other.Value, func(a, b Literal) bool {
@@ -343,39 +229,6 @@ func (t *MapLiteral) ValueString() string {
 	return fmt.Sprintf("%v", t.Value)
 }
 func (t *MapLiteral) GetType() types.Type { return t.Type }
-func (t *MapLiteral) ToProtoLiteral() *proto.Expression_Literal {
-	lit := &proto.Expression_Literal{
-		Nullable:               t.Type.GetNullability() == types.NullabilityNullable,
-		TypeVariationReference: t.Type.GetTypeVariationReference(),
-	}
-
-	if len(t.Value) == 0 {
-		lit.LiteralType = &proto.Expression_Literal_EmptyMap{
-			EmptyMap: types.TypeToProto(t.Type).GetMap(),
-		}
-	} else {
-		kv := make([]*proto.Expression_Literal_Map_KeyValue, len(t.Value))
-		for i, v := range t.Value {
-			kv[i] = &proto.Expression_Literal_Map_KeyValue{
-				Key:   v.Key.ToProtoLiteral(),
-				Value: v.Value.ToProtoLiteral(),
-			}
-		}
-
-		lit.LiteralType = &proto.Expression_Literal_Map_{
-			Map: &proto.Expression_Literal_Map{KeyValues: kv},
-		}
-	}
-
-	return lit
-}
-
-func (t *MapLiteral) ToProto() *proto.Expression {
-	return &proto.Expression{RexType: &proto.Expression_Literal_{
-		Literal: t.ToProtoLiteral(),
-	}}
-}
-
 func (t *MapLiteral) Equals(rhs Expression) bool {
 	if other, ok := rhs.(*MapLiteral); ok {
 		return t.Type.Equals(other.Type) && slices.EqualFunc(t.Value, other.Value,
@@ -417,30 +270,6 @@ func (t *ByteSliceLiteral[T]) ValueString() string {
 }
 
 func (t *ByteSliceLiteral[T]) GetType() types.Type { return t.Type }
-func (t *ByteSliceLiteral[T]) ToProtoLiteral() *proto.Expression_Literal {
-	lit := &proto.Expression_Literal{
-		Nullable:               t.Type.GetNullability() == types.NullabilityNullable,
-		TypeVariationReference: t.Type.GetTypeVariationReference(),
-	}
-
-	switch v := any(t.Value).(type) {
-	case []byte:
-		lit.LiteralType = &proto.Expression_Literal_Binary{Binary: v}
-	case types.FixedBinary:
-		lit.LiteralType = &proto.Expression_Literal_FixedBinary{FixedBinary: v}
-	case types.UUID:
-		lit.LiteralType = &proto.Expression_Literal_Uuid{Uuid: v}
-	}
-
-	return lit
-}
-
-func (t *ByteSliceLiteral[T]) ToProto() *proto.Expression {
-	return &proto.Expression{RexType: &proto.Expression_Literal_{
-		Literal: t.ToProtoLiteral(),
-	}}
-}
-
 func (t *ByteSliceLiteral[T]) Equals(rhs Expression) bool {
 	if other, ok := rhs.(*ByteSliceLiteral[T]); ok {
 		return t.Type.Equals(other.Type) &&
@@ -559,100 +388,6 @@ func (t *ProtoLiteral) GetType() types.Type { return t.Type }
 func (t *ProtoLiteral) String() string {
 	return fmt.Sprintf("%s(%s)", t.Type, t.ValueString())
 }
-func (t *ProtoLiteral) ToProtoLiteral() *proto.Expression_Literal {
-	lit := &proto.Expression_Literal{
-		Nullable:               t.Type.GetNullability() == types.NullabilityNullable,
-		TypeVariationReference: t.Type.GetTypeVariationReference(),
-	}
-
-	switch literalType := t.Type.(type) {
-	case *types.UserDefinedType:
-		params := make([]*proto.Type_Parameter, len(literalType.TypeParameters))
-		for i, p := range literalType.TypeParameters {
-			params[i] = p.ToProto()
-		}
-
-		udt := &proto.Expression_Literal_UserDefined{
-			TypeAnchorType: &proto.Expression_Literal_UserDefined_TypeReference{
-				TypeReference: literalType.TypeReference},
-			TypeParameters: params,
-		}
-		switch v := t.Value.(type) {
-		case *proto.Expression_Literal_UserDefined_Value:
-			udt.Val = v
-		case *proto.Expression_Literal_UserDefined_Struct:
-			udt.Val = v
-		default:
-			panic(fmt.Sprintf("unexpected UserDefined literal value type: %T", t.Value))
-		}
-
-		lit.LiteralType = &proto.Expression_Literal_UserDefined_{
-			UserDefined: udt,
-		}
-	case *types.IntervalYearType:
-		v := t.Value.(*types.IntervalYearToMonth)
-		lit.LiteralType = &proto.Expression_Literal_IntervalYearToMonth_{
-			IntervalYearToMonth: &proto.Expression_Literal_IntervalYearToMonth{
-				Years:  v.Years,
-				Months: v.Months,
-			},
-		}
-	case *types.IntervalDayType:
-		v := t.Value.(*types.IntervalDayToSecond)
-		lit.LiteralType = &proto.Expression_Literal_IntervalDayToSecond_{
-			IntervalDayToSecond: v,
-		}
-	case *types.VarCharType:
-		v := t.Value.(string)
-		lit.LiteralType = &proto.Expression_Literal_VarChar_{
-			VarChar: &proto.Expression_Literal_VarChar{
-				Value:  v,
-				Length: uint32(literalType.Length),
-			},
-		}
-	case *types.DecimalType:
-		v := t.Value.([]byte)
-		lit.LiteralType = &proto.Expression_Literal_Decimal_{
-			Decimal: &proto.Expression_Literal_Decimal{
-				Value:     v,
-				Precision: literalType.Precision,
-				Scale:     literalType.Scale,
-			},
-		}
-	case *types.PrecisionTimeType:
-		v := t.Value.(int64)
-		lit.LiteralType = &proto.Expression_Literal_PrecisionTime_{
-			PrecisionTime: &proto.Expression_Literal_PrecisionTime{
-				Precision: literalType.GetPrecisionProtoVal(),
-				Value:     v,
-			},
-		}
-	case *types.PrecisionTimestampType:
-		v := t.Value.(int64)
-		lit.LiteralType = &proto.Expression_Literal_PrecisionTimestamp_{
-			PrecisionTimestamp: &proto.Expression_Literal_PrecisionTimestamp{
-				Precision: literalType.GetPrecisionProtoVal(),
-				Value:     v,
-			},
-		}
-	case *types.PrecisionTimestampTzType:
-		v := t.Value.(int64)
-		lit.LiteralType = &proto.Expression_Literal_PrecisionTimestampTz{
-			PrecisionTimestampTz: &proto.Expression_Literal_PrecisionTimestamp{
-				Precision: literalType.GetPrecisionProtoVal(),
-				Value:     v,
-			},
-		}
-	}
-	return lit
-}
-
-func (t *ProtoLiteral) ToProto() *proto.Expression {
-	return &proto.Expression{RexType: &proto.Expression_Literal_{
-		Literal: t.ToProtoLiteral(),
-	}}
-}
-
 func (t *ProtoLiteral) Equals(rhs Expression) bool {
 	if other, ok := rhs.(*ProtoLiteral); ok {
 		return t.Type.Equals(other.Type) &&

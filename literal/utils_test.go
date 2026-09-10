@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/substrait-io/substrait-go/v9/expr"
 	"github.com/substrait-io/substrait-go/v9/types"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 )
 
@@ -222,7 +223,7 @@ func TestNewFloat32(t *testing.T) {
 			if !math.IsNaN(float64(tt.value)) {
 				assert.Equalf(t, tt.want, got, "NewFloat32(%v)", tt.value)
 			} else {
-				protoExp := got.ToProto()
+				protoExp := wire.ExprToProto(got)
 				assert.True(t, math.IsNaN(float64(protoExp.GetLiteral().GetFp32())), "NewFloat32(%v)", tt.value)
 			}
 		})
@@ -250,7 +251,7 @@ func TestNewFloat64(t *testing.T) {
 			if !math.IsNaN(tt.value) {
 				assert.Equalf(t, tt.want, got, "NewFloat64(%v)", tt.value)
 			} else {
-				protoExp := got.ToProto()
+				protoExp := wire.ExprToProto(got)
 				assert.True(t, math.IsNaN(protoExp.GetLiteral().GetFp64()), "NewFloat64(%v)", tt.value)
 			}
 		})

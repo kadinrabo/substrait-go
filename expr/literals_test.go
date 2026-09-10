@@ -9,6 +9,7 @@ import (
 	"github.com/substrait-io/substrait-go/v9/expr"
 	"github.com/substrait-io/substrait-go/v9/literal"
 	"github.com/substrait-io/substrait-go/v9/types"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 )
 
@@ -100,7 +101,7 @@ func TestNewLiteralWithIntervalYearToMonth(t *testing.T) {
 	assert.Equal(t, "1 years, 2 months", lit.ValueString())
 	assert.Equal(t, "P1Y2M", lit.(types.IsoValuePrinter).IsoValueString())
 
-	pb := lit.ToProtoLiteral().GetIntervalYearToMonth()
+	pb := wire.LiteralToProto(lit).GetIntervalYearToMonth()
 	assert.Equal(t, int32(1), pb.GetYears())
 	assert.Equal(t, int32(2), pb.GetMonths())
 }
