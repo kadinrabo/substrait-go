@@ -11,6 +11,7 @@ import (
 	"github.com/substrait-io/substrait-go/v9/extensions"
 	"github.com/substrait-io/substrait-go/v9/plan"
 	"github.com/substrait-io/substrait-go/v9/types"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 )
 
@@ -40,7 +41,7 @@ func TestScalarSubquery(t *testing.T) {
 	assert.True(t, expectedType.Equals(subquery.GetType()))
 
 	// Test protobuf conversion
-	proto := subquery.ToProto()
+	proto := wire.ExprToProto(subquery)
 	require.NotNil(t, proto)
 	require.NotNil(t, proto.GetSubquery())
 	require.NotNil(t, proto.GetSubquery().GetScalar())
@@ -61,7 +62,7 @@ func TestScalarSubqueryValidConstruction(t *testing.T) {
 	assert.Nil(t, nilSubquery.Input)
 
 	// Test protobuf conversion with valid relation
-	proto := validSubquery.ToProto()
+	proto := wire.ExprToProto(validSubquery)
 	require.NotNil(t, proto)
 	require.NotNil(t, proto.GetSubquery())
 	require.NotNil(t, proto.GetSubquery().GetScalar())
@@ -85,7 +86,7 @@ func TestInPredicateSubquery(t *testing.T) {
 	assert.True(t, expectedType.Equals(subquery.GetType()))
 
 	// Test protobuf conversion
-	proto := subquery.ToProto()
+	proto := wire.ExprToProto(subquery)
 	require.NotNil(t, proto)
 	require.NotNil(t, proto.GetSubquery())
 	require.NotNil(t, proto.GetSubquery().GetInPredicate())
@@ -123,7 +124,7 @@ func TestInPredicateSubqueryValidConstruction(t *testing.T) {
 	assert.NotNil(t, validSubquery.Haystack)
 
 	// Test protobuf conversion doesn't have UNSPECIFIED values
-	proto := validSubquery.ToProto()
+	proto := wire.ExprToProto(validSubquery)
 	require.NotNil(t, proto)
 	require.NotNil(t, proto.GetSubquery())
 	require.NotNil(t, proto.GetSubquery().GetInPredicate())
@@ -151,7 +152,7 @@ func TestSetPredicateSubquery(t *testing.T) {
 	assert.True(t, expectedType.Equals(subquery.GetType()))
 
 	// Test protobuf conversion
-	proto := subquery.ToProto()
+	proto := wire.ExprToProto(subquery)
 	require.NotNil(t, proto)
 	require.NotNil(t, proto.GetSubquery())
 	require.NotNil(t, proto.GetSubquery().GetSetPredicate())
@@ -196,7 +197,7 @@ func TestSetPredicateSubqueryValidConstruction(t *testing.T) {
 	assert.Nil(t, nilRelSubquery.Tuples)
 
 	// Test protobuf conversion with valid arguments
-	protoMsg := existsSubquery.ToProto()
+	protoMsg := wire.ExprToProto(existsSubquery)
 	require.NotNil(t, protoMsg)
 	require.NotNil(t, protoMsg.GetSubquery())
 	require.NotNil(t, protoMsg.GetSubquery().GetSetPredicate())
@@ -226,7 +227,7 @@ func TestSetComparisonSubquery(t *testing.T) {
 	assert.True(t, expectedType.Equals(subquery.GetType()))
 
 	// Test protobuf conversion
-	proto := subquery.ToProto()
+	proto := wire.ExprToProto(subquery)
 	require.NotNil(t, proto)
 	require.NotNil(t, proto.GetSubquery())
 	require.NotNil(t, proto.GetSubquery().GetSetComparison())
@@ -326,7 +327,7 @@ func TestSetComparisonSubqueryValidConstruction(t *testing.T) {
 	assert.Nil(t, bothNilSubquery.Right)
 
 	// Test protobuf conversion with valid arguments
-	protoMsg := anyEqSubquery.ToProto()
+	protoMsg := wire.ExprToProto(anyEqSubquery)
 	require.NotNil(t, protoMsg)
 	require.NotNil(t, protoMsg.GetSubquery())
 	require.NotNil(t, protoMsg.GetSubquery().GetSetComparison())
@@ -373,7 +374,7 @@ func TestSubqueryFromProto(t *testing.T) {
 
 	// Create a mock relation for testing
 	mockRel := createMockReadRel()
-	mockRelProto := mockRel.ToProto()
+	mockRelProto := wire.RelToProto(mockRel)
 
 	t.Run("ScalarSubquery", func(t *testing.T) {
 		subqueryProto := &proto.Expression_Subquery{
@@ -394,7 +395,7 @@ func TestSubqueryFromProto(t *testing.T) {
 	})
 
 	t.Run("InPredicateSubquery", func(t *testing.T) {
-		needleProto := expr.NewPrimitiveLiteral(int32(42), false).ToProto()
+		needleProto := wire.ExprToProto(expr.NewPrimitiveLiteral(int32(42), false))
 
 		subqueryProto := &proto.Expression_Subquery{
 			SubqueryType: &proto.Expression_Subquery_InPredicate_{
@@ -416,8 +417,8 @@ func TestSubqueryFromProto(t *testing.T) {
 	})
 
 	t.Run("InPredicateSubquery_MultipleNeedles", func(t *testing.T) {
-		needle1Proto := expr.NewPrimitiveLiteral(int32(42), false).ToProto()
-		needle2Proto := expr.NewPrimitiveLiteral(int32(99), false).ToProto()
+		needle1Proto := wire.ExprToProto(expr.NewPrimitiveLiteral(int32(42), false))
+		needle2Proto := wire.ExprToProto(expr.NewPrimitiveLiteral(int32(99), false))
 
 		subqueryProto := &proto.Expression_Subquery{
 			SubqueryType: &proto.Expression_Subquery_InPredicate_{
@@ -477,7 +478,7 @@ func TestSubqueryFromProto(t *testing.T) {
 	})
 
 	t.Run("SetComparisonSubquery_ANY_EQ", func(t *testing.T) {
-		leftExprProto := expr.NewPrimitiveLiteral(int32(42), false).ToProto()
+		leftExprProto := wire.ExprToProto(expr.NewPrimitiveLiteral(int32(42), false))
 
 		subqueryProto := &proto.Expression_Subquery{
 			SubqueryType: &proto.Expression_Subquery_SetComparison_{
@@ -503,7 +504,7 @@ func TestSubqueryFromProto(t *testing.T) {
 	})
 
 	t.Run("SetComparisonSubquery_ALL_LT", func(t *testing.T) {
-		leftExprProto := expr.NewPrimitiveLiteral(int32(50), false).ToProto()
+		leftExprProto := wire.ExprToProto(expr.NewPrimitiveLiteral(int32(50), false))
 
 		subqueryProto := &proto.Expression_Subquery{
 			SubqueryType: &proto.Expression_Subquery_SetComparison_{
@@ -567,7 +568,7 @@ func TestSubqueryFromProtoErrors(t *testing.T) {
 
 	t.Run("InPredicateSubquery_NeedleExprError", func(t *testing.T) {
 		mockRel := createMockReadRel()
-		mockRelProto := mockRel.ToProto()
+		mockRelProto := wire.RelToProto(mockRel)
 
 		// Create invalid expression proto that will cause ExprFromProto to fail
 		invalidExprProto := &proto.Expression{
@@ -590,7 +591,7 @@ func TestSubqueryFromProtoErrors(t *testing.T) {
 	})
 
 	t.Run("InPredicateSubquery_HaystackRelError", func(t *testing.T) {
-		needleProto := expr.NewPrimitiveLiteral(int32(42), false).ToProto()
+		needleProto := wire.ExprToProto(expr.NewPrimitiveLiteral(int32(42), false))
 
 		// Create invalid relation proto that will cause RelFromProto to fail
 		invalidRelProto := &proto.Rel{
@@ -634,7 +635,7 @@ func TestSubqueryFromProtoErrors(t *testing.T) {
 
 	t.Run("SetComparisonSubquery_LeftExprError", func(t *testing.T) {
 		mockRel := createMockReadRel()
-		mockRelProto := mockRel.ToProto()
+		mockRelProto := wire.RelToProto(mockRel)
 
 		// Create invalid expression proto that will cause ExprFromProto to fail
 		invalidExprProto := &proto.Expression{
@@ -659,7 +660,7 @@ func TestSubqueryFromProtoErrors(t *testing.T) {
 	})
 
 	t.Run("SetComparisonSubquery_RightRelError", func(t *testing.T) {
-		leftExprProto := expr.NewPrimitiveLiteral(int32(42), false).ToProto()
+		leftExprProto := wire.ExprToProto(expr.NewPrimitiveLiteral(int32(42), false))
 
 		// Create invalid relation proto that will cause RelFromProto to fail
 		invalidRelProto := &proto.Rel{
@@ -694,7 +695,7 @@ func TestSubqueryFromProtoEdgeCases(t *testing.T) {
 
 	// Create a mock relation for testing
 	mockRel := createMockReadRel()
-	mockRelProto := mockRel.ToProto()
+	mockRelProto := wire.RelToProto(mockRel)
 
 	t.Run("InPredicateSubquery_EmptyNeedles", func(t *testing.T) {
 		subqueryProto := &proto.Expression_Subquery{
@@ -716,7 +717,7 @@ func TestSubqueryFromProtoEdgeCases(t *testing.T) {
 	})
 
 	t.Run("InPredicateSubquery_MultipleNeedleErrors", func(t *testing.T) {
-		validNeedleProto := expr.NewPrimitiveLiteral(int32(42), false).ToProto()
+		validNeedleProto := wire.ExprToProto(expr.NewPrimitiveLiteral(int32(42), false))
 		invalidNeedleProto := &proto.Expression{
 			RexType: nil, // This will cause an error in ExprFromProto
 		}
@@ -737,7 +738,7 @@ func TestSubqueryFromProtoEdgeCases(t *testing.T) {
 	})
 
 	t.Run("SetComparisonSubquery_AllComparisonOperators", func(t *testing.T) {
-		leftExprProto := expr.NewPrimitiveLiteral(int32(42), false).ToProto()
+		leftExprProto := wire.ExprToProto(expr.NewPrimitiveLiteral(int32(42), false))
 
 		comparisonOps := []proto.Expression_Subquery_SetComparison_ComparisonOp{
 			proto.Expression_Subquery_SetComparison_COMPARISON_OP_EQ,
@@ -772,7 +773,7 @@ func TestSubqueryFromProtoEdgeCases(t *testing.T) {
 	})
 
 	t.Run("SetComparisonSubquery_AllReductionOperators", func(t *testing.T) {
-		leftExprProto := expr.NewPrimitiveLiteral(int32(42), false).ToProto()
+		leftExprProto := wire.ExprToProto(expr.NewPrimitiveLiteral(int32(42), false))
 
 		reductionOps := []proto.Expression_Subquery_SetComparison_ReductionOp{
 			proto.Expression_Subquery_SetComparison_REDUCTION_OP_ANY,

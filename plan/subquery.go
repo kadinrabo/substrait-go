@@ -103,20 +103,6 @@ func (s *ScalarSubquery) GetType() types.Type {
 	return schemaTypes[0]
 }
 
-func (s *ScalarSubquery) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_Subquery_{
-			Subquery: &proto.Expression_Subquery{
-				SubqueryType: &proto.Expression_Subquery_Scalar_{
-					Scalar: &proto.Expression_Subquery_Scalar{
-						Input: s.Input.ToProto(),
-					},
-				},
-			},
-		},
-	}
-}
-
 func (s *ScalarSubquery) Equals(other expr.Expression) bool {
 	otherScalar, ok := other.(*ScalarSubquery)
 	if !ok {
@@ -177,26 +163,6 @@ func (s *InPredicateSubquery) IsScalar() bool {
 
 func (s *InPredicateSubquery) GetType() types.Type {
 	return &types.BooleanType{Nullability: types.NullabilityRequired}
-}
-
-func (s *InPredicateSubquery) ToProto() *proto.Expression {
-	needles := make([]*proto.Expression, len(s.Needles))
-	for i, needle := range s.Needles {
-		needles[i] = needle.ToProto()
-	}
-
-	return &proto.Expression{
-		RexType: &proto.Expression_Subquery_{
-			Subquery: &proto.Expression_Subquery{
-				SubqueryType: &proto.Expression_Subquery_InPredicate_{
-					InPredicate: &proto.Expression_Subquery_InPredicate{
-						Needles:  needles,
-						Haystack: s.Haystack.ToProto(),
-					},
-				},
-			},
-		},
-	}
 }
 
 func (s *InPredicateSubquery) Equals(other expr.Expression) bool {
@@ -285,21 +251,6 @@ func (s *SetPredicateSubquery) IsScalar() bool { return true }
 
 func (s *SetPredicateSubquery) GetType() types.Type {
 	return &types.BooleanType{Nullability: types.NullabilityRequired}
-}
-
-func (s *SetPredicateSubquery) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_Subquery_{
-			Subquery: &proto.Expression_Subquery{
-				SubqueryType: &proto.Expression_Subquery_SetPredicate_{
-					SetPredicate: &proto.Expression_Subquery_SetPredicate{
-						PredicateOp: s.Operation,
-						Tuples:      s.Tuples.ToProto(),
-					},
-				},
-			},
-		},
-	}
 }
 
 func (s *SetPredicateSubquery) Equals(other expr.Expression) bool {
@@ -403,23 +354,6 @@ func (s *SetComparisonSubquery) IsScalar() bool {
 
 func (s *SetComparisonSubquery) GetType() types.Type {
 	return &types.BooleanType{Nullability: types.NullabilityRequired}
-}
-
-func (s *SetComparisonSubquery) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_Subquery_{
-			Subquery: &proto.Expression_Subquery{
-				SubqueryType: &proto.Expression_Subquery_SetComparison_{
-					SetComparison: &proto.Expression_Subquery_SetComparison{
-						ReductionOp:  proto.Expression_Subquery_SetComparison_ReductionOp(s.ReductionOp),
-						ComparisonOp: proto.Expression_Subquery_SetComparison_ComparisonOp(s.ComparisonOp),
-						Left:         s.Left.ToProto(),
-						Right:        s.Right.ToProto(),
-					},
-				},
-			},
-		},
-	}
 }
 
 func (s *SetComparisonSubquery) Equals(other expr.Expression) bool {
