@@ -391,24 +391,6 @@ func (s *ScalarFunction) ToProtoFuncArg() *proto.FunctionArgument {
 		},
 	}
 }
-func (s *ScalarFunction) ToProto() *proto.Expression {
-	args := make([]*proto.FunctionArgument, len(s.args))
-	for i, a := range s.args {
-		args[i] = a.ToProtoFuncArg()
-	}
-
-	return &proto.Expression{
-		RexType: &proto.Expression_ScalarFunction_{
-			ScalarFunction: &proto.Expression_ScalarFunction{
-				FunctionReference: s.funcRef,
-				Options:           types.FunctionOptionsToProto(s.options),
-				OutputType:        types.TypeToProto(s.outputType),
-				Arguments:         args,
-			},
-		},
-	}
-}
-
 func (s *ScalarFunction) Equals(rhs Expression) bool {
 	other, ok := rhs.(*ScalarFunction)
 	if !ok {
@@ -946,7 +928,6 @@ func (a *AggregateFunction) GetArgTypes() []types.Type {
 }
 
 func (a *AggregateFunction) GetType() types.Type { return a.outputType }
-
 func (a *AggregateFunction) ToProto() *proto.AggregateFunction {
 	var (
 		args  []*proto.FunctionArgument
