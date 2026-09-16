@@ -1389,20 +1389,6 @@ func (f *FuncType) Equals(rhs Type) bool {
 	return false
 }
 
-func (f *FuncType) ToProto() *proto.Type {
-	params := make([]*proto.Type, len(f.ParameterTypes))
-	for i, p := range f.ParameterTypes {
-		params[i] = TypeToProto(p)
-	}
-
-	return &proto.Type{Kind: &proto.Type_Func_{
-		Func: &proto.Type_Func{
-			ParameterTypes: params,
-			ReturnType:     TypeToProto(f.ReturnType),
-			Nullability:    proto.Type_Nullability(f.Nullability),
-		}}}
-}
-
 func (f *FuncType) ToProtoFuncArg() *proto.FunctionArgument {
 	return &proto.FunctionArgument{
 		ArgType: &proto.FunctionArgument_Type{Type: f.ToProto()},
