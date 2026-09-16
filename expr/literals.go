@@ -160,52 +160,6 @@ func (t *PrimitiveLiteral[T]) IsoValueString() string {
 }
 
 func (t *PrimitiveLiteral[T]) GetType() types.Type { return t.Type }
-func (t *PrimitiveLiteral[T]) ToProtoLiteral() *proto.Expression_Literal {
-	lit := &proto.Expression_Literal{
-		Nullable:               t.Type.GetNullability() == types.NullabilityNullable,
-		TypeVariationReference: t.Type.GetTypeVariationReference(),
-	}
-
-	switch v := any(t.Value).(type) {
-	case bool:
-		lit.LiteralType = &proto.Expression_Literal_Boolean{Boolean: v}
-	case int8:
-		lit.LiteralType = &proto.Expression_Literal_I8{I8: int32(v)}
-	case int16:
-		lit.LiteralType = &proto.Expression_Literal_I16{I16: int32(v)}
-	case int32:
-		lit.LiteralType = &proto.Expression_Literal_I32{I32: v}
-	case int64:
-		lit.LiteralType = &proto.Expression_Literal_I64{I64: v}
-	case float32:
-		lit.LiteralType = &proto.Expression_Literal_Fp32{Fp32: v}
-	case float64:
-		lit.LiteralType = &proto.Expression_Literal_Fp64{Fp64: v}
-	case string:
-		lit.LiteralType = &proto.Expression_Literal_String_{String_: v}
-	case types.Timestamp:
-		lit.LiteralType = &proto.Expression_Literal_Timestamp{Timestamp: int64(v)}
-	case types.Date:
-		lit.LiteralType = &proto.Expression_Literal_Date{Date: int32(v)}
-	case types.Time:
-		lit.LiteralType = &proto.Expression_Literal_Time{Time: int64(v)}
-	case types.FixedChar:
-		lit.LiteralType = &proto.Expression_Literal_FixedChar{FixedChar: string(v)}
-	case types.TimestampTz:
-		lit.LiteralType = &proto.Expression_Literal_TimestampTz{TimestampTz: int64(v)}
-	default:
-		panic("invalid primitive literal type")
-	}
-
-	return lit
-}
-
-func (t *PrimitiveLiteral[T]) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_Literal_{Literal: t.ToProtoLiteral()},
-	}
-}
-
 func (t *PrimitiveLiteral[T]) Equals(rhs Expression) bool {
 	if other, ok := rhs.(*PrimitiveLiteral[T]); ok {
 		return t.Type.Equals(other.Type) && t.Value == other.Value
