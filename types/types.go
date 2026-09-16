@@ -1527,14 +1527,8 @@ func (*MapType) BaseString() string {
 
 // TypeParam represents a type parameter for a user defined type
 type TypeParam interface {
-	ToProto() *proto.Type_Parameter
 	Equals(TypeParam) bool
 }
-
-// rather than creating a new one of these for every call ToProto which
-// will always be the same empty object we can just create this once
-// and return the same one every time.
-var nullTypeParam = &proto.Type_Parameter_Null{}
 
 // NullParameter is an explicitly null/unspecified parameter, to select
 // the default value (if any).
@@ -1543,10 +1537,6 @@ type NullParameter struct{}
 func (NullParameter) Equals(p TypeParam) bool {
 	_, ok := p.(NullParameter)
 	return ok
-}
-
-func (NullParameter) ToProto() *proto.Type_Parameter {
-	return &proto.Type_Parameter{Parameter: nullTypeParam}
 }
 
 // DataTypeParameter is like the i32 in LIST<i32>
@@ -1561,11 +1551,6 @@ func (d *DataTypeParameter) Equals(p TypeParam) bool {
 	return false
 }
 
-func (d *DataTypeParameter) ToProto() *proto.Type_Parameter {
-	return &proto.Type_Parameter{Parameter: &proto.Type_Parameter_DataType{
-		DataType: TypeToProto(d.Type)}}
-}
-
 // BooleanParameter is a type parameter like <true> for a type.
 type BooleanParameter bool
 
@@ -1574,11 +1559,6 @@ func (b BooleanParameter) Equals(p TypeParam) bool {
 		return b == rhs
 	}
 	return false
-}
-
-func (b BooleanParameter) ToProto() *proto.Type_Parameter {
-	return &proto.Type_Parameter{Parameter: &proto.Type_Parameter_Boolean{
-		Boolean: bool(b)}}
 }
 
 // IntegerParameter is the type parameter like 10 in VARCHAR<10>
@@ -1591,11 +1571,6 @@ func (b IntegerParameter) Equals(p TypeParam) bool {
 	return false
 }
 
-func (p IntegerParameter) ToProto() *proto.Type_Parameter {
-	return &proto.Type_Parameter{Parameter: &proto.Type_Parameter_Integer{
-		Integer: int64(p)}}
-}
-
 // EnumParameter is a type parameter that is some enum value
 type EnumParameter string
 
@@ -1604,11 +1579,6 @@ func (b EnumParameter) Equals(p TypeParam) bool {
 		return b == rhs
 	}
 	return false
-}
-
-func (p EnumParameter) ToProto() *proto.Type_Parameter {
-	return &proto.Type_Parameter{Parameter: &proto.Type_Parameter_Enum{
-		Enum: string(p)}}
 }
 
 // StringParameter is a type parameter which is a string value
@@ -1623,11 +1593,6 @@ func (p StringParameter) Equals(o TypeParam) bool {
 		return p == rhs
 	}
 	return false
-}
-
-func (p StringParameter) ToProto() *proto.Type_Parameter {
-	return &proto.Type_Parameter{Parameter: &proto.Type_Parameter_String_{
-		String_: string(p)}}
 }
 
 func (p StringParameter) Evaluate(symbolTable map[string]any) (any, error) {

@@ -216,3 +216,27 @@ func userDefinedTypeToProto(t *types.UserDefinedType) *proto.Type {
 			TypeParameters:         params,
 		}}}
 }
+
+// TypeParamToProto encodes a user-defined-type parameter.
+func TypeParamToProto(p types.TypeParam) *proto.Type_Parameter {
+	switch p := p.(type) {
+	case types.NullParameter:
+		return &proto.Type_Parameter{Parameter: &proto.Type_Parameter_Null{}}
+	case *types.DataTypeParameter:
+		return &proto.Type_Parameter{Parameter: &proto.Type_Parameter_DataType{
+			DataType: TypeToProto(p.Type)}}
+	case types.BooleanParameter:
+		return &proto.Type_Parameter{Parameter: &proto.Type_Parameter_Boolean{
+			Boolean: bool(p)}}
+	case types.IntegerParameter:
+		return &proto.Type_Parameter{Parameter: &proto.Type_Parameter_Integer{
+			Integer: int64(p)}}
+	case types.EnumParameter:
+		return &proto.Type_Parameter{Parameter: &proto.Type_Parameter_Enum{
+			Enum: string(p)}}
+	case types.StringParameter:
+		return &proto.Type_Parameter{Parameter: &proto.Type_Parameter_String_{
+			String_: string(p)}}
+	}
+	panic("unimplemented type parameter")
+}
