@@ -98,3 +98,14 @@ func maskSelectToProto(s expr.MaskSelect) *proto.Expression_MaskExpression_Selec
 		panic(fmt.Sprintf("wire: unhandled mask selection %T", s))
 	}
 }
+
+func maskStructItemToProto(m *expr.MaskStructItem) *proto.Expression_MaskExpression_StructItem {
+	var child *proto.Expression_MaskExpression_Select
+	if c := m.Child(); c != nil {
+		child = maskSelectToProto(c)
+	}
+	return &proto.Expression_MaskExpression_StructItem{
+		Field: m.Field(),
+		Child: child,
+	}
+}
