@@ -628,18 +628,6 @@ func (ex *Cast) GetType() types.Type {
 	return ex.Type
 }
 
-func (ex *Cast) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_Cast_{
-			Cast: &proto.Expression_Cast{
-				Type:            types.TypeToProto(ex.Type),
-				Input:           ex.Input.ToProto(),
-				FailureBehavior: proto.Expression_Cast_FailureBehavior(ex.FailureBehavior),
-			},
-		},
-	}
-}
-
 func (ex *Cast) Equals(other Expression) bool {
 	rhs, ok := other.(*Cast)
 	if !ok {
