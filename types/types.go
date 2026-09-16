@@ -1206,14 +1206,6 @@ func (s *DecimalType) ToProtoFuncArg() *proto.FunctionArgument {
 	}
 }
 
-func (s *DecimalType) ToProto() *proto.Type {
-	return &proto.Type{Kind: &proto.Type_Decimal_{
-		Decimal: &proto.Type_Decimal{
-			Scale: s.Scale, Precision: s.Precision,
-			Nullability:            proto.Type_Nullability(s.Nullability),
-			TypeVariationReference: s.TypeVariationRef}}}
-}
-
 func (*DecimalType) ShortString() string { return "dec" }
 func (s *DecimalType) String() string {
 	return fmt.Sprintf("decimal%s<%d,%d>", strNullable(s),

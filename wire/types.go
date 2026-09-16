@@ -122,6 +122,16 @@ func TypeToProto(t types.Type) *proto.Type {
 				Length:                 t.Length,
 				Nullability:            proto.Type_Nullability(t.Nullability),
 				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.DecimalType:
+		return decimalTypeToProto(t)
 	}
 	panic("unimplemented type")
+}
+
+func decimalTypeToProto(s *types.DecimalType) *proto.Type {
+	return &proto.Type{Kind: &proto.Type_Decimal_{
+		Decimal: &proto.Type_Decimal{
+			Scale: s.Scale, Precision: s.Precision,
+			Nullability:            proto.Type_Nullability(s.Nullability),
+			TypeVariationReference: s.TypeVariationRef}}}
 }
