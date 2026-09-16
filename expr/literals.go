@@ -114,26 +114,12 @@ func (n *NullLiteral) ValueString() string {
 }
 
 func (n *NullLiteral) GetType() types.Type { return n.Type }
-func (n *NullLiteral) ToProtoLiteral() *proto.Expression_Literal {
-	return &proto.Expression_Literal{
-		Nullable:               true,
-		TypeVariationReference: n.Type.GetTypeVariationReference(),
-		LiteralType:            &proto.Expression_Literal_Null{Null: types.TypeToProto(n.Type)},
-	}
-}
-
-func (n *NullLiteral) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_Literal_{Literal: n.ToProtoLiteral()},
-	}
-}
 
 func (n *NullLiteral) ToProtoFuncArg() *proto.FunctionArgument {
 	return &proto.FunctionArgument{
 		ArgType: &proto.FunctionArgument_Value{Value: n.ToProto()},
 	}
 }
-
 func (n *NullLiteral) Equals(rhs Expression) bool {
 	if nl, ok := rhs.(*NullLiteral); ok {
 		return nl.Type.Equals(n.Type)
