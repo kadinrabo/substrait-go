@@ -30,6 +30,8 @@ func RelToProto(rel plan.Rel) *proto.Rel {
 		return filterRelToProto(r)
 	case *plan.FetchRel:
 		return fetchRelToProto(r)
+	case *plan.ProjectRel:
+		return projectRelToProto(r)
 	default:
 		panic(fmt.Sprintf("wire: unhandled relation %T", rel))
 	}
@@ -198,6 +200,23 @@ func fetchRelToProto(f *plan.FetchRel) *proto.Rel {
 				OffsetMode:        &proto.FetchRel_Offset{Offset: f.Offset()},
 				CountMode:         &proto.FetchRel_Count{Count: f.Count()},
 				AdvancedExtension: f.GetAdvancedExtension(),
+			},
+		},
+	}
+}
+
+func projectRelToProto(p *plan.ProjectRel) *proto.Rel {
+	exprs := make([]*proto.Expression, len(p.Expressions()))
+	for i, e := range p.Expressions() {
+		exprs[i] = ExprToProto(e)
+	}
+	return &proto.Rel{
+		RelType: &proto.Rel_Project{
+			Project: &proto.ProjectRel{
+				Common:            relCommonToProto(&p.RelCommon),
+				Input:             RelToProto(p.Input()),
+				Expressions:       exprs,
+				AdvancedExtension: p.GetAdvancedExtension(),
 			},
 		},
 	}

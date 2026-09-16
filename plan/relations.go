@@ -574,24 +574,6 @@ func (p *ProjectRel) SetAdvancedExtension(advExtension *extensions.AdvancedExten
 	return existing
 }
 
-func (p *ProjectRel) ToProto() *proto.Rel {
-	exprs := make([]*proto.Expression, len(p.exprs))
-	for i, e := range p.exprs {
-		exprs[i] = e.ToProto()
-	}
-
-	return &proto.Rel{
-		RelType: &proto.Rel_Project{
-			Project: &proto.ProjectRel{
-				Common:            p.toProto(),
-				Input:             p.input.ToProto(),
-				Expressions:       exprs,
-				AdvancedExtension: p.advExtension,
-			},
-		},
-	}
-}
-
 func (p *ProjectRel) ToProtoPlanRel() *proto.PlanRel {
 	return &proto.PlanRel{
 		RelType: &proto.PlanRel_Rel{
