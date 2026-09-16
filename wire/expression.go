@@ -21,6 +21,8 @@ func ExprToProto(e expr.Expression) *proto.Expression {
 		return ifThenToProto(e)
 	case *expr.SwitchExpr:
 		return switchExprToProto(e)
+	case *expr.SingularOrList:
+		return singularOrListToProto(e)
 	case *expr.ScalarFunction:
 		return scalarFunctionToProto(e)
 	case *expr.WindowFunction:
@@ -104,6 +106,21 @@ func switchExprToProto(ex *expr.SwitchExpr) *proto.Expression {
 				Match: ExprToProto(ex.MatchExpr()),
 				Ifs:   cases,
 				Else:  elseExpr,
+			},
+		},
+	}
+}
+
+func singularOrListToProto(ex *expr.SingularOrList) *proto.Expression {
+	opts := make([]*proto.Expression, len(ex.Options))
+	for i, o := range ex.Options {
+		opts[i] = ExprToProto(o)
+	}
+	return &proto.Expression{
+		RexType: &proto.Expression_SingularOrList_{
+			SingularOrList: &proto.Expression_SingularOrList{
+				Value:   ExprToProto(ex.Value),
+				Options: opts,
 			},
 		},
 	}

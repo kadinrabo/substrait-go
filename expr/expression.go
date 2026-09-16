@@ -918,21 +918,6 @@ func (ex *SingularOrList) GetType() types.Type {
 	return &types.BooleanType{Nullability: types.NullabilityRequired}
 }
 
-func (ex *SingularOrList) ToProto() *proto.Expression {
-	opts := make([]*proto.Expression, len(ex.Options))
-	for i, o := range ex.Options {
-		opts[i] = o.ToProto()
-	}
-	return &proto.Expression{
-		RexType: &proto.Expression_SingularOrList_{
-			SingularOrList: &proto.Expression_SingularOrList{
-				Value:   ex.Value.ToProto(),
-				Options: opts,
-			},
-		},
-	}
-}
-
 func (ex *SingularOrList) Equals(other Expression) bool {
 	rhs, ok := other.(*SingularOrList)
 	if !ok {
