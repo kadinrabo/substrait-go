@@ -125,3 +125,28 @@ func maskListSelectToProto(m *expr.MaskListSelect) *proto.Expression_MaskExpress
 		},
 	}
 }
+
+func maskListSelectItemToProto(s expr.MaskListSelectItem) *proto.Expression_MaskExpression_ListSelect_ListSelectItem {
+	switch s := s.(type) {
+	case *expr.MaskListElement:
+		return &proto.Expression_MaskExpression_ListSelect_ListSelectItem{
+			Type: &proto.Expression_MaskExpression_ListSelect_ListSelectItem_Item{
+				Item: &proto.Expression_MaskExpression_ListSelect_ListSelectItem_ListElement{
+					Field: s.GetField(),
+				},
+			},
+		}
+	case *expr.MaskListSlice:
+		start, end := s.GetBounds()
+		return &proto.Expression_MaskExpression_ListSelect_ListSelectItem{
+			Type: &proto.Expression_MaskExpression_ListSelect_ListSelectItem_Slice{
+				Slice: &proto.Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice{
+					Start: start,
+					End:   end,
+				},
+			},
+		}
+	default:
+		panic(fmt.Sprintf("wire: unhandled mask selection %T", s))
+	}
+}

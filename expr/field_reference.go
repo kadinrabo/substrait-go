@@ -364,7 +364,6 @@ func (m *MaskListSelect) Selection() []MaskListSelectItem {
 }
 
 type MaskListSelectItem interface {
-	ToProto() *proto.Expression_MaskExpression_ListSelect_ListSelectItem
 }
 
 // MaskListElement selects a single element of a list by its field index, mirroring the fields of
@@ -377,16 +376,6 @@ func (m *MaskListElement) GetField() int32 {
 	return m.Field
 }
 
-func (m *MaskListElement) ToProto() *proto.Expression_MaskExpression_ListSelect_ListSelectItem {
-	return &proto.Expression_MaskExpression_ListSelect_ListSelectItem{
-		Type: &proto.Expression_MaskExpression_ListSelect_ListSelectItem_Item{
-			Item: &proto.Expression_MaskExpression_ListSelect_ListSelectItem_ListElement{
-				Field: m.Field,
-			},
-		},
-	}
-}
-
 // MaskListSlice selects a contiguous range of list elements by start and end bounds, mirroring the
 // fields of the Substrait mask expression ListSlice message.
 type MaskListSlice struct {
@@ -396,16 +385,6 @@ type MaskListSlice struct {
 
 func (m *MaskListSlice) GetBounds() (start, end int32) {
 	return m.Start, m.End
-}
-func (m *MaskListSlice) ToProto() *proto.Expression_MaskExpression_ListSelect_ListSelectItem {
-	return &proto.Expression_MaskExpression_ListSelect_ListSelectItem{
-		Type: &proto.Expression_MaskExpression_ListSelect_ListSelectItem_Slice{
-			Slice: &proto.Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice{
-				Start: m.Start,
-				End:   m.End,
-			},
-		},
-	}
 }
 
 type MapSelectKind int8
