@@ -10,6 +10,7 @@ import (
 	"github.com/substrait-io/substrait-go/v9/expr"
 	"github.com/substrait-io/substrait-go/v9/extensions"
 	"github.com/substrait-io/substrait-go/v9/types"
+	"github.com/substrait-io/substrait-go/v9/wire"
 )
 
 func TestWindowFunctionBoundsType(t *testing.T) {
@@ -56,7 +57,7 @@ func TestWindowFunctionBoundsType(t *testing.T) {
 			require.NoError(t, err)
 
 			// Roundtrip: serialize and deserialize
-			protoExpr := wf.ToProto()
+			protoExpr := wire.ExprToProto(wf)
 			deserialized, err := expr.ExprFromProto(protoExpr, schema, reg)
 			require.NoError(t, err)
 
