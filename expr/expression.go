@@ -802,31 +802,6 @@ func (ex *SwitchExpr) GetType() types.Type {
 	return ex.elseClause.GetType()
 }
 
-func (ex *SwitchExpr) ToProto() *proto.Expression {
-	var elseExpr *proto.Expression
-	if ex.elseClause != nil {
-		elseExpr = ex.elseClause.ToProto()
-	}
-
-	cases := make([]*proto.Expression_SwitchExpression_IfValue, len(ex.ifs))
-	for i, c := range ex.ifs {
-		cases[i] = &proto.Expression_SwitchExpression_IfValue{
-			If:   c.If.ToProtoLiteral(),
-			Then: c.Then.ToProto(),
-		}
-	}
-
-	return &proto.Expression{
-		RexType: &proto.Expression_SwitchExpression_{
-			SwitchExpression: &proto.Expression_SwitchExpression{
-				Match: ex.match.ToProto(),
-				Ifs:   cases,
-				Else:  elseExpr,
-			},
-		},
-	}
-}
-
 func (ex *SwitchExpr) Equals(other Expression) bool {
 	rhs, ok := other.(*SwitchExpr)
 	if !ok {

@@ -19,6 +19,8 @@ func ExprToProto(e expr.Expression) *proto.Expression {
 		return dynamicParameterToProto(e)
 	case *expr.IfThen:
 		return ifThenToProto(e)
+	case *expr.SwitchExpr:
+		return switchExprToProto(e)
 	case *expr.ScalarFunction:
 		return scalarFunctionToProto(e)
 	case *expr.WindowFunction:
@@ -76,6 +78,32 @@ func ifThenToProto(ex *expr.IfThen) *proto.Expression {
 			IfThen: &proto.Expression_IfThen{
 				Ifs:  clauses,
 				Else: elseClause,
+			},
+		},
+	}
+}
+
+func switchExprToProto(ex *expr.SwitchExpr) *proto.Expression {
+	var elseExpr *proto.Expression
+	if e := ex.Else(); e != nil {
+		elseExpr = ExprToProto(e)
+	}
+
+	cases := make([]*proto.Expression_SwitchExpression_IfValue, ex.NCases())
+	for i := range cases {
+		c := ex.Case(i)
+		cases[i] = &proto.Expression_SwitchExpression_IfValue{
+			If:   LiteralToProto(c.If),
+			Then: ExprToProto(c.Then),
+		}
+	}
+
+	return &proto.Expression{
+		RexType: &proto.Expression_SwitchExpression_{
+			SwitchExpression: &proto.Expression_SwitchExpression{
+				Match: ExprToProto(ex.MatchExpr()),
+				Ifs:   cases,
+				Else:  elseExpr,
 			},
 		},
 	}
