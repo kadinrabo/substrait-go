@@ -17,6 +17,8 @@ func ExprToProto(e expr.Expression) *proto.Expression {
 		return castToProto(e)
 	case *expr.DynamicParameter:
 		return dynamicParameterToProto(e)
+	case *expr.IfThen:
+		return ifThenToProto(e)
 	case *expr.ScalarFunction:
 		return scalarFunctionToProto(e)
 	case *expr.WindowFunction:
@@ -50,6 +52,30 @@ func dynamicParameterToProto(dp *expr.DynamicParameter) *proto.Expression {
 			DynamicParameter: &proto.DynamicParameter{
 				Type:               TypeToProto(dp.OutputType),
 				ParameterReference: dp.ParameterReference,
+			},
+		},
+	}
+}
+
+func ifThenToProto(ex *expr.IfThen) *proto.Expression {
+	clauses := make([]*proto.Expression_IfThen_IfClause, ex.NIfs())
+	for i := range clauses {
+		pair := ex.IfPair(i)
+		clauses[i] = &proto.Expression_IfThen_IfClause{
+			If:   ExprToProto(pair.If),
+			Then: ExprToProto(pair.Then),
+		}
+	}
+
+	var elseClause *proto.Expression
+	if e := ex.Else(); e != nil {
+		elseClause = ExprToProto(e)
+	}
+	return &proto.Expression{
+		RexType: &proto.Expression_IfThen_{
+			IfThen: &proto.Expression_IfThen{
+				Ifs:  clauses,
+				Else: elseClause,
 			},
 		},
 	}

@@ -535,29 +535,6 @@ func (ex *IfThen) GetType() types.Type {
 	return ex.elseClause.GetType()
 }
 
-func (ex *IfThen) ToProto() *proto.Expression {
-	ifthenClauses := make([]*proto.Expression_IfThen_IfClause, len(ex.ifs))
-	for i, c := range ex.ifs {
-		ifthenClauses[i] = &proto.Expression_IfThen_IfClause{
-			If:   c.If.ToProto(),
-			Then: c.Then.ToProto(),
-		}
-	}
-
-	var elseClause *proto.Expression
-	if ex.elseClause != nil {
-		elseClause = ex.elseClause.ToProto()
-	}
-	return &proto.Expression{
-		RexType: &proto.Expression_IfThen_{
-			IfThen: &proto.Expression_IfThen{
-				Ifs:  ifthenClauses,
-				Else: elseClause,
-			},
-		},
-	}
-}
-
 func (ex *IfThen) Equals(other Expression) bool {
 	rhs, ok := other.(*IfThen)
 	if !ok {
