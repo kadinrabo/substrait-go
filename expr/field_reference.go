@@ -238,22 +238,6 @@ func (r *ListElementRef) GetType(parentType types.Type) (types.Type, error) {
 	return lt.Type, nil
 }
 
-func (r *ListElementRef) ToProto() *proto.Expression_ReferenceSegment {
-	var c *proto.Expression_ReferenceSegment
-	if r.Child != nil {
-		c = r.Child.ToProto()
-	}
-
-	return &proto.Expression_ReferenceSegment{
-		ReferenceType: &proto.Expression_ReferenceSegment_ListElement_{
-			ListElement: &proto.Expression_ReferenceSegment_ListElement{
-				Offset: r.Offset,
-				Child:  c,
-			},
-		},
-	}
-}
-
 func (r *ListElementRef) GetChild() ReferenceSegment { return r.Child }
 func (r *ListElementRef) Equals(rhs ReferenceSegment) bool {
 	if rhs, ok := rhs.(*ListElementRef); ok {
