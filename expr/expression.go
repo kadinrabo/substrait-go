@@ -1450,24 +1450,6 @@ func ExtendedFromProto(ex *proto.ExtendedExpression, c *extensions.Collection) (
 	}, nil
 }
 
-func (ex *Extended) ToProto() *proto.ExtendedExpression {
-	urns, decls := ex.reg.ExtensionsToProto()
-	refs := make([]*proto.ExpressionReference, len(ex.ReferredExpr))
-	for i, ref := range ex.ReferredExpr {
-		refs[i] = ref.ToProto()
-	}
-
-	return &proto.ExtendedExpression{
-		Version:            types.VersionToProto(ex.Version),
-		ExtensionUrns:      urns,
-		Extensions:         decls,
-		BaseSchema:         ex.BaseSchema.ToProto(),
-		AdvancedExtensions: ex.AdvancedExts,
-		ExpectedTypeUrls:   ex.ExpectedTypeURLs,
-		ReferredExpr:       refs,
-	}
-}
-
 func (s VirtualTableExpressionValue) ToProto() *proto.Expression_Nested_Struct {
 	fields := make([]*proto.Expression, len(s))
 	for i, f := range s {
@@ -1477,3 +1459,4 @@ func (s VirtualTableExpressionValue) ToProto() *proto.Expression_Nested_Struct {
 		Fields: fields,
 	}
 }
+func (ex *Extended) Registry() *ExtensionRegistry { return &ex.reg }

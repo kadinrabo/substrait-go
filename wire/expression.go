@@ -231,3 +231,22 @@ func ExpressionReferenceToProto(er *expr.ExpressionReference) *proto.ExpressionR
 	}
 	return out
 }
+
+// ExtendedToProto encodes an extended expression as its protobuf message.
+func ExtendedToProto(ex *expr.Extended) *proto.ExtendedExpression {
+	urns, decls := ex.Registry().ExtensionsToProto()
+	refs := make([]*proto.ExpressionReference, len(ex.ReferredExpr))
+	for i := range ex.ReferredExpr {
+		refs[i] = ExpressionReferenceToProto(&ex.ReferredExpr[i])
+	}
+
+	return &proto.ExtendedExpression{
+		Version:            VersionToProto(ex.Version),
+		ExtensionUrns:      urns,
+		Extensions:         decls,
+		BaseSchema:         NamedStructToProto(ex.BaseSchema),
+		AdvancedExtensions: ex.AdvancedExts,
+		ExpectedTypeUrls:   ex.ExpectedTypeURLs,
+		ReferredExpr:       refs,
+	}
+}
