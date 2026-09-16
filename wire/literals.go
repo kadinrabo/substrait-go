@@ -41,6 +41,10 @@ func LiteralToProto(l expr.Literal) *proto.Expression_Literal {
 		return primitiveLiteralToProto(l)
 	case *expr.PrimitiveLiteral[types.TimestampTz]:
 		return primitiveLiteralToProto(l)
+	case *expr.NestedLiteral[expr.StructLiteralValue]:
+		return nestedLiteralToProto(l)
+	case *expr.NestedLiteral[expr.ListLiteralValue]:
+		return nestedLiteralToProto(l)
 	default:
 		panic(fmt.Sprintf("wire: unhandled literal %T", l))
 	}
@@ -89,6 +93,37 @@ func primitiveLiteralToProto[T expr.PrimitiveLiteralValue](l *expr.PrimitiveLite
 		lit.LiteralType = &proto.Expression_Literal_TimestampTz{TimestampTz: int64(v)}
 	default:
 		panic("invalid primitive literal type")
+	}
+
+	return lit
+}
+
+func nestedLiteralToProto[T expr.StructLiteralValue | expr.ListLiteralValue](l *expr.NestedLiteral[T]) *proto.Expression_Literal {
+	lit := &proto.Expression_Literal{
+		Nullable:               l.Type.GetNullability() == types.NullabilityNullable,
+		TypeVariationReference: l.Type.GetTypeVariationReference(),
+	}
+
+	vals := make([]*proto.Expression_Literal, len(l.Value))
+	for i, v := range l.Value {
+		vals[i] = LiteralToProto(v)
+	}
+
+	switch any(l.Value).(type) {
+	case expr.StructLiteralValue:
+		lit.LiteralType = &proto.Expression_Literal_Struct_{
+			Struct: &proto.Expression_Literal_Struct{Fields: vals},
+		}
+	case expr.ListLiteralValue:
+		if len(vals) == 0 {
+			lit.LiteralType = &proto.Expression_Literal_EmptyList{
+				EmptyList: TypeToProto(l.Type).GetList(),
+			}
+		} else {
+			lit.LiteralType = &proto.Expression_Literal_List_{
+				List: &proto.Expression_Literal_List{Values: vals},
+			}
+		}
 	}
 
 	return lit

@@ -212,47 +212,6 @@ func (t *NestedLiteral[T]) ValueString() string {
 	return fmt.Sprintf("%v", t.Value)
 }
 func (t *NestedLiteral[T]) GetType() types.Type { return t.Type }
-func (t *NestedLiteral[T]) ToProtoLiteral() *proto.Expression_Literal {
-	lit := &proto.Expression_Literal{
-		Nullable:               t.Type.GetNullability() == types.NullabilityNullable,
-		TypeVariationReference: t.Type.GetTypeVariationReference(),
-	}
-
-	vals := make([]*proto.Expression_Literal, len(t.Value))
-	for i, l := range t.Value {
-		vals[i] = l.ToProtoLiteral()
-	}
-
-	switch any(t.Value).(type) {
-	case StructLiteralValue:
-		lit.LiteralType = &proto.Expression_Literal_Struct_{
-			Struct: &proto.Expression_Literal_Struct{
-				Fields: vals,
-			},
-		}
-	case ListLiteralValue:
-		if len(vals) == 0 {
-			lit.LiteralType = &proto.Expression_Literal_EmptyList{
-				EmptyList: types.TypeToProto(t.Type).GetList(),
-			}
-		} else {
-			lit.LiteralType = &proto.Expression_Literal_List_{
-				List: &proto.Expression_Literal_List{
-					Values: vals,
-				},
-			}
-		}
-	}
-
-	return lit
-}
-
-func (t *NestedLiteral[T]) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_Literal_{Literal: t.ToProtoLiteral()},
-	}
-}
-
 func (t *NestedLiteral[T]) Equals(rhs Expression) bool {
 	if other, ok := rhs.(*NestedLiteral[T]); ok {
 		return t.Type.Equals(other.Type) && slices.EqualFunc(t.Value, other.Value, func(a, b Literal) bool {
