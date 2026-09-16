@@ -31,6 +31,8 @@ func ExprToProto(e expr.Expression) *proto.Expression {
 		return structExprToProto(e)
 	case *expr.ListExpr:
 		return listExprToProto(e)
+	case *expr.Lambda:
+		return lambdaToProto(e)
 	case *expr.ScalarFunction:
 		return scalarFunctionToProto(e)
 	case *expr.WindowFunction:
