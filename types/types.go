@@ -1450,13 +1450,6 @@ func (t *ListType) Equals(rhs Type) bool {
 	return false
 }
 
-func (t *ListType) ToProto() *proto.Type {
-	return &proto.Type{Kind: &proto.Type_List_{
-		List: &proto.Type_List{Nullability: proto.Type_Nullability(t.Nullability),
-			Type:                   TypeToProto(t.Type),
-			TypeVariationReference: t.TypeVariationRef}}}
-}
-
 func (t *ListType) ToProtoFuncArg() *proto.FunctionArgument {
 	return &proto.FunctionArgument{
 		ArgType: &proto.FunctionArgument_Type{Type: t.ToProto()},

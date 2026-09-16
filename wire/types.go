@@ -128,6 +128,8 @@ func TypeToProto(t types.Type) *proto.Type {
 		return structTypeToProto(t)
 	case *types.FuncType:
 		return funcTypeToProto(t)
+	case *types.ListType:
+		return listTypeToProto(t)
 	}
 	panic("unimplemented type")
 }
@@ -164,4 +166,11 @@ func funcTypeToProto(f *types.FuncType) *proto.Type {
 			ReturnType:     TypeToProto(f.ReturnType),
 			Nullability:    proto.Type_Nullability(f.Nullability),
 		}}}
+}
+
+func listTypeToProto(t *types.ListType) *proto.Type {
+	return &proto.Type{Kind: &proto.Type_List_{
+		List: &proto.Type_List{Nullability: proto.Type_Nullability(t.Nullability),
+			Type:                   TypeToProto(t.Type),
+			TypeVariationReference: t.TypeVariationRef}}}
 }
