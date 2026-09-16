@@ -10,6 +10,7 @@ import (
 	"github.com/substrait-io/substrait-go/v9/expr"
 	"github.com/substrait-io/substrait-go/v9/extensions"
 	"github.com/substrait-io/substrait-go/v9/types"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 	pb "google.golang.org/protobuf/proto"
 )
@@ -76,14 +77,14 @@ func TestDynamicParameterToProtoRoundtrip(t *testing.T) {
 			assert.True(t, tt.dp.IsScalar())
 			assert.True(t, tt.dp.GetType().Equals(tt.dp.OutputType))
 
-			protoExpr := tt.dp.ToProto()
+			protoExpr := wire.ExprToProto(tt.dp)
 			require.NotNil(t, protoExpr)
 
 			fromProto, err := expr.ExprFromProto(protoExpr, nil, reg)
 			require.NoError(t, err)
 			assert.True(t, tt.dp.Equals(fromProto), "roundtrip should produce equal expression")
 
-			protoRoundTrip := fromProto.ToProto()
+			protoRoundTrip := wire.ExprToProto(fromProto)
 			assert.True(t, pb.Equal(protoExpr, protoRoundTrip), "proto roundtrip should be equal")
 		})
 	}

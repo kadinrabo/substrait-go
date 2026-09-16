@@ -15,6 +15,8 @@ func ExprToProto(e expr.Expression) *proto.Expression {
 	switch e := e.(type) {
 	case *expr.Cast:
 		return castToProto(e)
+	case *expr.DynamicParameter:
+		return dynamicParameterToProto(e)
 	case *expr.ScalarFunction:
 		return scalarFunctionToProto(e)
 	case *expr.WindowFunction:
@@ -37,6 +39,17 @@ func castToProto(ex *expr.Cast) *proto.Expression {
 				Type:            TypeToProto(ex.Type),
 				Input:           ExprToProto(ex.Input),
 				FailureBehavior: proto.Expression_Cast_FailureBehavior(ex.FailureBehavior),
+			},
+		},
+	}
+}
+
+func dynamicParameterToProto(dp *expr.DynamicParameter) *proto.Expression {
+	return &proto.Expression{
+		RexType: &proto.Expression_DynamicParameter{
+			DynamicParameter: &proto.DynamicParameter{
+				Type:               TypeToProto(dp.OutputType),
+				ParameterReference: dp.ParameterReference,
 			},
 		},
 	}

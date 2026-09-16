@@ -663,17 +663,6 @@ func (dp *DynamicParameter) IsScalar() bool { return true }
 
 func (dp *DynamicParameter) GetType() types.Type { return dp.OutputType }
 
-func (dp *DynamicParameter) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_DynamicParameter{
-			DynamicParameter: &proto.DynamicParameter{
-				Type:               types.TypeToProto(dp.OutputType),
-				ParameterReference: dp.ParameterReference,
-			},
-		},
-	}
-}
-
 func (dp *DynamicParameter) Equals(other Expression) bool {
 	rhs, ok := other.(*DynamicParameter)
 	if !ok {
