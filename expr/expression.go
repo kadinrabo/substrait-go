@@ -404,7 +404,6 @@ type Expression interface {
 	GetType() types.Type
 	// ToProto converts this Expression and its arguments
 	// to the equivalent Protobuf objects.
-	ToProto() *proto.Expression
 	// Equals returns true if this expression and all of its
 	// arguments and their children etc. are equal to the passed
 	// in Expression.
