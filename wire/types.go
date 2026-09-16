@@ -99,6 +99,11 @@ func TypeToProto(t types.Type) *proto.Type {
 			IntervalYear: &proto.Type_IntervalYear{
 				Nullability:            proto.Type_Nullability(t.Nullability),
 				TypeVariationReference: t.TypeVariationRef}}}
+	case types.IntervalYearToMonthType:
+		return &proto.Type{Kind: &proto.Type_IntervalYear_{
+			IntervalYear: &proto.Type_IntervalYear{
+				Nullability:            proto.Type_Nullability(t.GetNullability()),
+				TypeVariationReference: t.GetTypeVariationReference()}}}
 	case *types.IntervalDayType:
 		return intervalDayTypeToProto(t)
 	case types.IntervalCompoundType:
