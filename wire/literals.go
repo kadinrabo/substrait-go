@@ -285,3 +285,12 @@ func protoLiteralToProto(l *expr.ProtoLiteral) *proto.Expression_Literal {
 
 	return lit
 }
+
+// StructLiteralValueToProto encodes a struct literal's fields.
+func StructLiteralValueToProto(s expr.StructLiteralValue) *proto.Expression_Literal_Struct {
+	fields := make([]*proto.Expression_Literal, len(s))
+	for i, f := range s {
+		fields[i] = LiteralToProto(f)
+	}
+	return &proto.Expression_Literal_Struct{Fields: fields}
+}
