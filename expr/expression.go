@@ -1237,26 +1237,6 @@ func (ex *StructExpr) GetType() types.Type {
 	}
 }
 
-func (ex *StructExpr) ToProto() *proto.Expression {
-	fields := make([]*proto.Expression, len(ex.Fields))
-	for i, f := range ex.Fields {
-		fields[i] = f.ToProto()
-	}
-	return &proto.Expression{
-		RexType: &proto.Expression_Nested_{
-			Nested: &proto.Expression_Nested{
-				Nullable:               ex.Nullable,
-				TypeVariationReference: ex.TypeVariationRef,
-				NestedType: &proto.Expression_Nested_Struct_{
-					Struct: &proto.Expression_Nested_Struct{
-						Fields: fields,
-					},
-				},
-			},
-		},
-	}
-}
-
 func (ex *StructExpr) Equals(other Expression) bool {
 	rhs, ok := other.(*StructExpr)
 	if !ok {
