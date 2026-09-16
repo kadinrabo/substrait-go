@@ -133,6 +133,8 @@ func TypeToProto(t types.Type) *proto.Type {
 				TypeVariationReference: t.TypeVariationRef}}}
 	case *types.DecimalType:
 		return decimalTypeToProto(t)
+	case *types.PrecisionTimestampType:
+		return precisionTimestampTypeToProto(t)
 	case *types.StructType:
 		return structTypeToProto(t)
 	case *types.FuncType:
