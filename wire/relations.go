@@ -32,6 +32,8 @@ func RelToProto(rel plan.Rel) *proto.Rel {
 		return fetchRelToProto(r)
 	case *plan.ProjectRel:
 		return projectRelToProto(r)
+	case *plan.AggregateRel:
+		return aggregateRelToProto(r)
 	default:
 		panic(fmt.Sprintf("wire: unhandled relation %T", rel))
 	}
@@ -220,4 +222,46 @@ func projectRelToProto(p *plan.ProjectRel) *proto.Rel {
 			},
 		},
 	}
+}
+
+func aggregateRelToProto(ar *plan.AggregateRel) *proto.Rel {
+	groupingExprs := make([]*proto.Expression, len(ar.GroupingExpressions()))
+	for i, e := range ar.GroupingExpressions() {
+		groupingExprs[i] = ExprToProto(e)
+	}
+
+	refs := ar.GroupingReferences()
+	groupings := make([]*proto.AggregateRel_Grouping, len(refs))
+	for i := range refs {
+		groupings[i] = &proto.AggregateRel_Grouping{ExpressionReferences: refs[i]}
+	}
+
+	measures := make([]*proto.AggregateRel_Measure, len(ar.Measures()))
+	for i := range ar.Measures() {
+		m := ar.Measures()[i]
+		measures[i] = aggRelMeasureToProto(&m)
+	}
+
+	return &proto.Rel{
+		RelType: &proto.Rel_Aggregate{
+			Aggregate: &proto.AggregateRel{
+				Common:              relCommonToProto(&ar.RelCommon),
+				Input:               RelToProto(ar.Input()),
+				GroupingExpressions: groupingExprs,
+				Groupings:           groupings,
+				Measures:            measures,
+				AdvancedExtension:   ar.GetAdvancedExtension(),
+			},
+		},
+	}
+}
+
+func aggRelMeasureToProto(am *plan.AggRelMeasure) *proto.AggregateRel_Measure {
+	ret := &proto.AggregateRel_Measure{
+		Measure: AggregateFunctionToProto(am.Measure()),
+	}
+	if f := am.RawFilter(); f != nil {
+		ret.Filter = ExprToProto(f)
+	}
+	return ret
 }

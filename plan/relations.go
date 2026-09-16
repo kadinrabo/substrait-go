@@ -961,15 +961,7 @@ func (am *AggRelMeasure) Filter() expr.Expression {
 	return am.filter
 }
 
-func (am *AggRelMeasure) ToProto() *proto.AggregateRel_Measure {
-	ret := &proto.AggregateRel_Measure{
-		Measure: am.measure.ToProto(),
-	}
-	if am.filter != nil {
-		ret.Filter = am.filter.ToProto()
-	}
-	return ret
-}
+func (am *AggRelMeasure) RawFilter() expr.Expression { return am.filter }
 
 // AggregateRel is a relational operator representing a GROUP BY aggregate.
 type AggregateRel struct {
@@ -1014,38 +1006,6 @@ func (ar *AggregateRel) SetAdvancedExtension(advExtension *extensions.AdvancedEx
 	existing := ar.advExtension
 	ar.advExtension = advExtension
 	return existing
-}
-
-func (ar *AggregateRel) ToProto() *proto.Rel {
-	groupingExpressionsProto := make([]*proto.Expression, len(ar.groupingExpressions))
-	for i, e := range ar.groupingExpressions {
-		groupingExpressionsProto[i] = e.ToProto()
-	}
-
-	groupings := make([]*proto.AggregateRel_Grouping, len(ar.groupingReferences))
-	for i := range ar.groupingReferences {
-		groupings[i] = &proto.AggregateRel_Grouping{
-			ExpressionReferences: ar.groupingReferences[i],
-		}
-	}
-
-	measures := make([]*proto.AggregateRel_Measure, len(ar.measures))
-	for i, m := range ar.measures {
-		measures[i] = m.ToProto()
-	}
-
-	return &proto.Rel{
-		RelType: &proto.Rel_Aggregate{
-			Aggregate: &proto.AggregateRel{
-				Common:              ar.toProto(),
-				Input:               ar.input.ToProto(),
-				GroupingExpressions: groupingExpressionsProto,
-				Groupings:           groupings,
-				Measures:            measures,
-				AdvancedExtension:   ar.advExtension,
-			},
-		},
-	}
 }
 
 func (ar *AggregateRel) ToProtoPlanRel() *proto.PlanRel {
