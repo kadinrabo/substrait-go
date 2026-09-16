@@ -1141,29 +1141,6 @@ func (ex *MapExpr) GetType() types.Type {
 	}
 }
 
-func (ex *MapExpr) ToProto() *proto.Expression {
-	kvs := make([]*proto.Expression_Nested_Map_KeyValue, len(ex.KeyValues))
-	for i, kv := range ex.KeyValues {
-		kvs[i] = &proto.Expression_Nested_Map_KeyValue{
-			Key:   kv.Key.ToProto(),
-			Value: kv.Value.ToProto(),
-		}
-	}
-	return &proto.Expression{
-		RexType: &proto.Expression_Nested_{
-			Nested: &proto.Expression_Nested{
-				Nullable:               ex.Nullable,
-				TypeVariationReference: ex.TypeVariationRef,
-				NestedType: &proto.Expression_Nested_Map_{
-					Map: &proto.Expression_Nested_Map{
-						KeyValues: kvs,
-					},
-				},
-			},
-		},
-	}
-}
-
 func (ex *MapExpr) Equals(other Expression) bool {
 	rhs, ok := other.(*MapExpr)
 	if !ok {

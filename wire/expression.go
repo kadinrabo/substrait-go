@@ -25,6 +25,8 @@ func ExprToProto(e expr.Expression) *proto.Expression {
 		return singularOrListToProto(e)
 	case *expr.MultiOrList:
 		return multiOrListToProto(e)
+	case *expr.MapExpr:
+		return mapExprToProto(e)
 	case *expr.ScalarFunction:
 		return scalarFunctionToProto(e)
 	case *expr.WindowFunction:
@@ -147,6 +149,27 @@ func multiOrListToProto(ex *expr.MultiOrList) *proto.Expression {
 			MultiOrList: &proto.Expression_MultiOrList{
 				Value:   toSlice(ex.Value),
 				Options: opts,
+			},
+		},
+	}
+}
+
+func mapExprToProto(ex *expr.MapExpr) *proto.Expression {
+	kvs := make([]*proto.Expression_Nested_Map_KeyValue, len(ex.KeyValues))
+	for i, kv := range ex.KeyValues {
+		kvs[i] = &proto.Expression_Nested_Map_KeyValue{
+			Key:   ExprToProto(kv.Key),
+			Value: ExprToProto(kv.Value),
+		}
+	}
+	return &proto.Expression{
+		RexType: &proto.Expression_Nested_{
+			Nested: &proto.Expression_Nested{
+				Nullable:               ex.Nullable,
+				TypeVariationReference: ex.TypeVariationRef,
+				NestedType: &proto.Expression_Nested_Map_{
+					Map: &proto.Expression_Nested_Map{KeyValues: kvs},
+				},
 			},
 		},
 	}
