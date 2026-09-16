@@ -23,6 +23,21 @@ func RefSegmentToProto(r expr.ReferenceSegment) *proto.Expression_ReferenceSegme
 	}
 }
 
+func mapKeyRefToProto(r *expr.MapKeyRef) *proto.Expression_ReferenceSegment {
+	var child *proto.Expression_ReferenceSegment
+	if r.Child != nil {
+		child = RefSegmentToProto(r.Child)
+	}
+	return &proto.Expression_ReferenceSegment{
+		ReferenceType: &proto.Expression_ReferenceSegment_MapKey_{
+			MapKey: &proto.Expression_ReferenceSegment_MapKey{
+				MapKey: LiteralToProto(r.MapKey),
+				Child:  child,
+			},
+		},
+	}
+}
+
 func maskSelectToProto(s expr.MaskSelect) *proto.Expression_MaskExpression_Select {
 	switch s := s.(type) {
 	case expr.MaskStructSelect:
