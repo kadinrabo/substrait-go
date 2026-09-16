@@ -214,3 +214,20 @@ func listExprToProto(ex *expr.ListExpr) *proto.Expression {
 		},
 	}
 }
+
+// ExpressionReferenceToProto encodes an expression reference as its protobuf
+// message.
+func ExpressionReferenceToProto(er *expr.ExpressionReference) *proto.ExpressionReference {
+	out := &proto.ExpressionReference{OutputNames: er.OutputNames}
+	switch {
+	case er.GetExpr() != nil:
+		out.ExprType = &proto.ExpressionReference_Expression{
+			Expression: ExprToProto(er.GetExpr()),
+		}
+	case er.GetMeasure() != nil:
+		out.ExprType = &proto.ExpressionReference_Measure{
+			Measure: AggregateFunctionToProto(er.GetMeasure()),
+		}
+	}
+	return out
+}

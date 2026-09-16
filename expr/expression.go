@@ -1384,22 +1384,6 @@ func NewMeasureReference(names []string, measure *AggregateFunction) ExpressionR
 	return ExpressionReference{OutputNames: names, measure: measure}
 }
 
-func (er *ExpressionReference) ToProto() *proto.ExpressionReference {
-	out := &proto.ExpressionReference{OutputNames: er.OutputNames}
-	switch {
-	case er.expr != nil:
-		out.ExprType = &proto.ExpressionReference_Expression{
-			Expression: er.expr.ToProto(),
-		}
-	case er.measure != nil:
-		out.ExprType = &proto.ExpressionReference_Measure{
-			Measure: er.measure.ToProto(),
-		}
-	}
-
-	return out
-}
-
 func (er *ExpressionReference) SetExpr(ex Expression) {
 	er.expr = ex
 	er.measure = nil
