@@ -23,41 +23,6 @@ func (m IntervalCompoundLiteral) getType() types.Type {
 	return types.NewIntervalCompoundType().WithPrecision(m.SubSecondPrecision).WithNullability(m.Nullability)
 }
 
-func (m IntervalCompoundLiteral) ToProtoLiteral() *proto.Expression_Literal {
-	t := m.getType()
-	intrCompPB := &proto.Expression_Literal_IntervalCompound{}
-
-	if m.Years != 0 || m.Months != 0 {
-		yearToMonthProto := &proto.Expression_Literal_IntervalYearToMonth{
-			Years:  m.Years,
-			Months: m.Months,
-		}
-		intrCompPB.IntervalYearToMonth = yearToMonthProto
-	}
-
-	if m.Days != 0 || m.Seconds != 0 || m.SubSeconds != 0 {
-		dayToSecondProto := &proto.Expression_Literal_IntervalDayToSecond{
-			Days:          m.Days,
-			Seconds:       m.Seconds,
-			PrecisionMode: &proto.Expression_Literal_IntervalDayToSecond_Precision{Precision: m.SubSecondPrecision.ToProtoVal()},
-			Subseconds:    m.SubSeconds,
-		}
-		intrCompPB.IntervalDayToSecond = dayToSecondProto
-	}
-
-	return &proto.Expression_Literal{
-		LiteralType:            &proto.Expression_Literal_IntervalCompound_{IntervalCompound: intrCompPB},
-		Nullable:               t.GetNullability() == types.NullabilityNullable,
-		TypeVariationReference: t.GetTypeVariationReference(),
-	}
-}
-
-func (m IntervalCompoundLiteral) ToProto() *proto.Expression {
-	return &proto.Expression{RexType: &proto.Expression_Literal_{
-		Literal: m.ToProtoLiteral(),
-	}}
-}
-
 func intervalCompoundLiteralFromProto(l *proto.Expression_Literal) Literal {
 	icLiteral := IntervalCompoundLiteral{Nullability: getNullability(l.Nullable)}
 	yearToMonth := l.GetIntervalCompound().GetIntervalYearToMonth()

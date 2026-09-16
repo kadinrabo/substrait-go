@@ -71,6 +71,8 @@ func LiteralToProto(l expr.Literal) *proto.Expression_Literal {
 		return mapLiteralToProto(l)
 	case *expr.ProtoLiteral:
 		return protoLiteralToProto(l)
+	case expr.IntervalCompoundLiteral:
+		return intervalCompoundLiteralToProto(l)
 	default:
 		panic(fmt.Sprintf("wire: unhandled literal %T", l))
 	}
