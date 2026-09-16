@@ -36,6 +36,8 @@ func RelToProto(rel plan.Rel) *proto.Rel {
 		return aggregateRelToProto(r)
 	case *plan.SortRel:
 		return sortRelToProto(r)
+	case *plan.SetRel:
+		return setRelToProto(r)
 	default:
 		panic(fmt.Sprintf("wire: unhandled relation %T", rel))
 	}
@@ -281,6 +283,23 @@ func sortRelToProto(sr *plan.SortRel) *proto.Rel {
 				Input:             RelToProto(sr.Input()),
 				Sorts:             sorts,
 				AdvancedExtension: sr.GetAdvancedExtension(),
+			},
+		},
+	}
+}
+
+func setRelToProto(s *plan.SetRel) *proto.Rel {
+	inputs := make([]*proto.Rel, len(s.Inputs()))
+	for i, in := range s.Inputs() {
+		inputs[i] = RelToProto(in)
+	}
+	return &proto.Rel{
+		RelType: &proto.Rel_Set{
+			Set: &proto.SetRel{
+				Common:            relCommonToProto(&s.RelCommon),
+				Inputs:            inputs,
+				Op:                proto.SetRel_SetOp(s.Op()),
+				AdvancedExtension: s.GetAdvancedExtension(),
 			},
 		},
 	}

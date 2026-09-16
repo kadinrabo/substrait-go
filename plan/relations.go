@@ -1327,23 +1327,6 @@ func (s *SetRel) SetAdvancedExtension(advExtension *extensions.AdvancedExtension
 	return existing
 }
 
-func (s *SetRel) ToProto() *proto.Rel {
-	inputs := make([]*proto.Rel, len(s.inputs))
-	for i, in := range s.inputs {
-		inputs[i] = in.ToProto()
-	}
-	return &proto.Rel{
-		RelType: &proto.Rel_Set{
-			Set: &proto.SetRel{
-				Common:            s.toProto(),
-				Inputs:            inputs,
-				Op:                proto.SetRel_SetOp(s.op),
-				AdvancedExtension: s.advExtension,
-			},
-		},
-	}
-}
-
 func (s *SetRel) ToProtoPlanRel() *proto.PlanRel {
 	return &proto.PlanRel{
 		RelType: &proto.PlanRel_Rel{
