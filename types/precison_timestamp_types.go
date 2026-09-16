@@ -166,14 +166,6 @@ func (m *PrecisionTimestampTzType) ToProtoFuncArg() *proto.FunctionArgument {
 	}
 }
 
-func (m *PrecisionTimestampTzType) ToProto() *proto.Type {
-	return &proto.Type{Kind: &proto.Type_PrecisionTimestampTz{
-		PrecisionTimestampTz: &proto.Type_PrecisionTimestampTZ{
-			Precision:              m.Precision.ToProtoVal(),
-			Nullability:            proto.Type_Nullability(m.Nullability),
-			TypeVariationReference: m.TypeVariationRef}}}
-}
-
 func (m *PrecisionTimestampTzType) String() string {
 	return fmt.Sprintf("%s%s<%d>", TypeNamePrecisionTimestampTz, strNullable(m),
 		m.Precision.ToProtoVal())

@@ -127,24 +127,6 @@ func TestNewPrecisionTimestampType(t *testing.T) {
 	}
 }
 
-func assertPrecisionTimeStampTzProto(t *testing.T, expectedPrecision TimePrecision, expectedNullability Nullability, toVerifyType PrecisionTimestampTzType) {
-	expectedTypeProto := &proto.Type{Kind: &proto.Type_PrecisionTimestampTz{
-		PrecisionTimestampTz: &proto.Type_PrecisionTimestampTZ{
-			Precision:   expectedPrecision.ToProtoVal(),
-			Nullability: proto.Type_Nullability(expectedNullability),
-		},
-	}}
-	if diff := cmp.Diff(toVerifyType.ToProto(), expectedTypeProto, protocmp.Transform()); diff != "" {
-		t.Errorf("precisionTimeStampTz proto didn't match, diff:\n%v", diff)
-	}
-	expectedFuncArgProto := &proto.FunctionArgument{ArgType: &proto.FunctionArgument_Type{
-		Type: expectedTypeProto,
-	}}
-	if diff := cmp.Diff(toVerifyType.ToProtoFuncArg(), expectedFuncArgProto, protocmp.Transform()); diff != "" {
-		t.Errorf("precisionTimeStampTz proto didn't match, diff:\n%v", diff)
-	}
-}
-
 func TestSubSecondsToDuration(t *testing.T) {
 	tests := []struct {
 		name       string

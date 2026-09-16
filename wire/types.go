@@ -135,6 +135,8 @@ func TypeToProto(t types.Type) *proto.Type {
 		return decimalTypeToProto(t)
 	case *types.PrecisionTimestampType:
 		return precisionTimestampTypeToProto(t)
+	case *types.PrecisionTimestampTzType:
+		return precisionTimestampTzTypeToProto(t)
 	case *types.StructType:
 		return structTypeToProto(t)
 	case *types.FuncType:
