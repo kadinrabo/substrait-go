@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/substrait-io/substrait-go/v9/types"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -62,7 +63,7 @@ func TestIntervalDayToSecondMatchesDescriptor(t *testing.T) {
 func TestIntervalDayToSecondRoundTrip(t *testing.T) {
 	t.Run("precision round trip", func(t *testing.T) {
 		in := &types.IntervalDayToSecond{Days: 1, Seconds: 2, Subseconds: 3, Precision: types.PrecisionNanoSeconds}
-		p := types.IntervalDayToSecondToProto(in)
+		p := wire.IntervalDayToSecondToProto(in)
 		require.IsType(t, &proto.Expression_Literal_IntervalDayToSecond_Precision{}, p.PrecisionMode)
 		got, err := types.IntervalDayToSecondFromProto(p)
 		require.NoError(t, err)
@@ -91,7 +92,7 @@ func TestIntervalDayToSecondRoundTrip(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	assert.Nil(t, types.IntervalDayToSecondToProto(nil))
+	assert.Nil(t, wire.IntervalDayToSecondToProto(nil))
 	got, err := types.IntervalDayToSecondFromProto(nil)
 	require.NoError(t, err)
 	assert.Nil(t, got)

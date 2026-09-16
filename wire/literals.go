@@ -10,6 +10,22 @@ import (
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 )
 
+// IntervalDayToSecondToProto encodes the domain interval as its protobuf literal message. It always
+// writes the precision precision_mode arm; the deprecated microseconds arm is never emitted.
+func IntervalDayToSecondToProto(v *types.IntervalDayToSecond) *proto.Expression_Literal_IntervalDayToSecond {
+	if v == nil {
+		return nil
+	}
+	return &proto.Expression_Literal_IntervalDayToSecond{
+		Days:       v.Days,
+		Seconds:    v.Seconds,
+		Subseconds: v.Subseconds,
+		PrecisionMode: &proto.Expression_Literal_IntervalDayToSecond_Precision{
+			Precision: v.Precision.ToProtoVal(),
+		},
+	}
+}
+
 // LiteralToProto encodes a literal as its protobuf message.
 func LiteralToProto(l expr.Literal) *proto.Expression_Literal {
 	switch l := l.(type) {
@@ -53,6 +69,8 @@ func LiteralToProto(l expr.Literal) *proto.Expression_Literal {
 		return byteSliceLiteralToProto(l)
 	case *expr.MapLiteral:
 		return mapLiteralToProto(l)
+	case *expr.ProtoLiteral:
+		return protoLiteralToProto(l)
 	default:
 		panic(fmt.Sprintf("wire: unhandled literal %T", l))
 	}
@@ -176,6 +194,93 @@ func byteSliceLiteralToProto[T ~[]byte](l *expr.ByteSliceLiteral[T]) *proto.Expr
 		lit.LiteralType = &proto.Expression_Literal_FixedBinary{FixedBinary: v}
 	case types.UUID:
 		lit.LiteralType = &proto.Expression_Literal_Uuid{Uuid: v}
+	}
+
+	return lit
+}
+
+func protoLiteralToProto(l *expr.ProtoLiteral) *proto.Expression_Literal {
+	lit := &proto.Expression_Literal{
+		Nullable:               l.Type.GetNullability() == types.NullabilityNullable,
+		TypeVariationReference: l.Type.GetTypeVariationReference(),
+	}
+
+	switch literalType := l.Type.(type) {
+	case *types.UserDefinedType:
+		params := make([]*proto.Type_Parameter, len(literalType.TypeParameters))
+		for i, p := range literalType.TypeParameters {
+			params[i] = TypeParamToProto(p)
+		}
+
+		udt := &proto.Expression_Literal_UserDefined{
+			TypeAnchorType: &proto.Expression_Literal_UserDefined_TypeReference{
+				TypeReference: literalType.TypeReference},
+			TypeParameters: params,
+		}
+		switch v := l.Value.(type) {
+		case *proto.Expression_Literal_UserDefined_Value:
+			udt.Val = v
+		case *proto.Expression_Literal_UserDefined_Struct:
+			udt.Val = v
+		default:
+			panic("unexpected UserDefined literal value type")
+		}
+
+		lit.LiteralType = &proto.Expression_Literal_UserDefined_{UserDefined: udt}
+	case *types.IntervalYearType:
+		v := l.Value.(*types.IntervalYearToMonth)
+		lit.LiteralType = &proto.Expression_Literal_IntervalYearToMonth_{
+			IntervalYearToMonth: &proto.Expression_Literal_IntervalYearToMonth{
+				Years:  v.Years,
+				Months: v.Months,
+			},
+		}
+	case *types.IntervalDayType:
+		v := l.Value.(*types.IntervalDayToSecond)
+		lit.LiteralType = &proto.Expression_Literal_IntervalDayToSecond_{
+			IntervalDayToSecond: IntervalDayToSecondToProto(v),
+		}
+	case *types.VarCharType:
+		v := l.Value.(string)
+		lit.LiteralType = &proto.Expression_Literal_VarChar_{
+			VarChar: &proto.Expression_Literal_VarChar{
+				Value:  v,
+				Length: uint32(literalType.Length),
+			},
+		}
+	case *types.DecimalType:
+		v := l.Value.([]byte)
+		lit.LiteralType = &proto.Expression_Literal_Decimal_{
+			Decimal: &proto.Expression_Literal_Decimal{
+				Value:     v,
+				Precision: literalType.Precision,
+				Scale:     literalType.Scale,
+			},
+		}
+	case *types.PrecisionTimeType:
+		v := l.Value.(int64)
+		lit.LiteralType = &proto.Expression_Literal_PrecisionTime_{
+			PrecisionTime: &proto.Expression_Literal_PrecisionTime{
+				Precision: literalType.GetPrecisionProtoVal(),
+				Value:     v,
+			},
+		}
+	case *types.PrecisionTimestampType:
+		v := l.Value.(int64)
+		lit.LiteralType = &proto.Expression_Literal_PrecisionTimestamp_{
+			PrecisionTimestamp: &proto.Expression_Literal_PrecisionTimestamp{
+				Precision: literalType.GetPrecisionProtoVal(),
+				Value:     v,
+			},
+		}
+	case *types.PrecisionTimestampTzType:
+		v := l.Value.(int64)
+		lit.LiteralType = &proto.Expression_Literal_PrecisionTimestampTz{
+			PrecisionTimestampTz: &proto.Expression_Literal_PrecisionTimestamp{
+				Precision: literalType.GetPrecisionProtoVal(),
+				Value:     v,
+			},
+		}
 	}
 
 	return lit

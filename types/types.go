@@ -435,22 +435,6 @@ func (i *IntervalDayToSecond) GetPrecisionProtoVal() int32 {
 	return i.Precision.ToProtoVal()
 }
 
-// IntervalDayToSecondToProto encodes the domain interval as its protobuf literal message. It always
-// writes the precision precision_mode arm; the deprecated microseconds arm is never emitted.
-func IntervalDayToSecondToProto(v *IntervalDayToSecond) *proto.Expression_Literal_IntervalDayToSecond {
-	if v == nil {
-		return nil
-	}
-	return &proto.Expression_Literal_IntervalDayToSecond{
-		Days:       v.Days,
-		Seconds:    v.Seconds,
-		Subseconds: v.Subseconds,
-		PrecisionMode: &proto.Expression_Literal_IntervalDayToSecond_Precision{
-			Precision: v.Precision.ToProtoVal(),
-		},
-	}
-}
-
 // IntervalDayToSecondFromProto decodes a protobuf interval literal message into the domain type.
 // An absent precision_mode is rejected: subseconds has no scale without a precision.
 func IntervalDayToSecondFromProto(p *proto.Expression_Literal_IntervalDayToSecond) (*IntervalDayToSecond, error) {

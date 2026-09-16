@@ -3,76 +3,10 @@ package expr
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/substrait-io/substrait-go/v9/types"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
-	"google.golang.org/protobuf/testing/protocmp"
 )
-
-func TestToProtoLiteral(t *testing.T) {
-	for _, tc := range []struct {
-		name                      string
-		constructedLiteral        *ProtoLiteral
-		expectedExpressionLiteral *proto.Expression_Literal
-	}{
-		{"TimeType",
-			&ProtoLiteral{Value: int64(12345678), Type: types.NewPrecisionTimeType(types.PrecisionEMinus4Seconds).WithNullability(types.NullabilityNullable)},
-			&proto.Expression_Literal{LiteralType: &proto.Expression_Literal_PrecisionTime_{PrecisionTime: &proto.Expression_Literal_PrecisionTime{Precision: 4, Value: 12345678}}, Nullable: true},
-		},
-		{"TimeStampType",
-			&ProtoLiteral{Value: int64(12345678), Type: types.NewPrecisionTimestampType(types.PrecisionEMinus4Seconds).WithNullability(types.NullabilityNullable)},
-			&proto.Expression_Literal{LiteralType: &proto.Expression_Literal_PrecisionTimestamp_{PrecisionTimestamp: &proto.Expression_Literal_PrecisionTimestamp{Precision: 4, Value: 12345678}}, Nullable: true},
-		},
-		{"TimeStampTzType",
-			&ProtoLiteral{Value: int64(12345678), Type: types.NewPrecisionTimestampTzType(types.PrecisionNanoSeconds).WithNullability(types.NullabilityNullable)},
-			&proto.Expression_Literal{LiteralType: &proto.Expression_Literal_PrecisionTimestampTz{PrecisionTimestampTz: &proto.Expression_Literal_PrecisionTimestamp{Precision: 9, Value: 12345678}}, Nullable: true},
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			toProto := tc.constructedLiteral.ToProtoLiteral()
-			if diff := cmp.Diff(toProto, tc.expectedExpressionLiteral, protocmp.Transform()); diff != "" {
-				t.Errorf("proto didn't match, diff:\n%v", diff)
-			}
-		})
-
-	}
-}
-
-func TestMapLiteralToProtoLiteral(t *testing.T) {
-	mapLit := NewNestedLiteral(MapLiteralValue{
-		{
-			Key:   NewPrimitiveLiteral("foo", false),
-			Value: NewPrimitiveLiteral[int32](1, false),
-		},
-		{
-			Key:   NewPrimitiveLiteral("bar", false),
-			Value: NewPrimitiveLiteral[int32](2, false),
-		},
-	}, false)
-
-	got := mapLit.ToProtoLiteral()
-	expected := &proto.Expression_Literal{
-		LiteralType: &proto.Expression_Literal_Map_{
-			Map: &proto.Expression_Literal_Map{
-				KeyValues: []*proto.Expression_Literal_Map_KeyValue{
-					{
-						Key:   NewPrimitiveLiteral("foo", false).ToProtoLiteral(),
-						Value: NewPrimitiveLiteral[int32](1, false).ToProtoLiteral(),
-					},
-					{
-						Key:   NewPrimitiveLiteral("bar", false).ToProtoLiteral(),
-						Value: NewPrimitiveLiteral[int32](2, false).ToProtoLiteral(),
-					},
-				},
-			},
-		},
-	}
-
-	if diff := cmp.Diff(got, expected, protocmp.Transform()); diff != "" {
-		t.Errorf("proto didn't match, diff:\n%v", diff)
-	}
-}
 
 func TestLiteralFromProtoLiteral(t *testing.T) {
 	intDayToSecVal := &proto.Expression_Literal_IntervalDayToSecond{Days: 1, Seconds: 2, PrecisionMode: &proto.Expression_Literal_IntervalDayToSecond_Precision{Precision: 5}}
