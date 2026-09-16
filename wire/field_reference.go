@@ -170,3 +170,51 @@ func maskMapSelectToProto(m *expr.MaskMapSelect) *proto.Expression_MaskExpressio
 
 	return &proto.Expression_MaskExpression_Select{Type: mapSelect}
 }
+
+// FieldReferenceToProto encodes a field reference as its protobuf message.
+func FieldReferenceToProto(f *expr.FieldReference) *proto.Expression {
+	return &proto.Expression{
+		RexType: &proto.Expression_Selection{Selection: fieldReferenceRefToProto(f)},
+	}
+}
+
+func fieldReferenceRefToProto(f *expr.FieldReference) *proto.Expression_FieldReference {
+	ret := &proto.Expression_FieldReference{}
+	switch r := f.Reference.(type) {
+	case expr.ReferenceSegment:
+		ret.ReferenceType = &proto.Expression_FieldReference_DirectReference{
+			DirectReference: RefSegmentToProto(r),
+		}
+	case *expr.MaskExpression:
+		ret.ReferenceType = &proto.Expression_FieldReference_MaskedReference{
+			MaskedReference: MaskExpressionToProto(r),
+		}
+	}
+
+	if f.Root != expr.RootReference {
+		switch r := f.Root.(type) {
+		case expr.Expression:
+			ret.RootType = &proto.Expression_FieldReference_Expression{
+				Expression: ExprToProto(r),
+			}
+		case expr.OuterReference:
+			ret.RootType = &proto.Expression_FieldReference_OuterReference_{
+				OuterReference: &proto.Expression_FieldReference_OuterReference{
+					StepsOut: uint32(r),
+				},
+			}
+		case expr.LambdaParameterReference:
+			ret.RootType = &proto.Expression_FieldReference_LambdaParameterReference_{
+				LambdaParameterReference: &proto.Expression_FieldReference_LambdaParameterReference{
+					StepsOut: r.StepsOut,
+				},
+			}
+		}
+	} else {
+		ret.RootType = &proto.Expression_FieldReference_RootReference_{
+			RootReference: &proto.Expression_FieldReference_RootReference{},
+		}
+	}
+
+	return ret
+}

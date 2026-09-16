@@ -510,53 +510,6 @@ func (f *FieldReference) ToProtoFuncArg() *proto.FunctionArgument {
 		ArgType: &proto.FunctionArgument_Value{Value: f.ToProto()},
 	}
 }
-func (f *FieldReference) ToProtoFieldRef() *proto.Expression_FieldReference {
-	ret := &proto.Expression_FieldReference{}
-	switch r := f.Reference.(type) {
-	case ReferenceSegment:
-		ret.ReferenceType = &proto.Expression_FieldReference_DirectReference{
-			DirectReference: r.ToProto()}
-	case *MaskExpression:
-		ret.ReferenceType = &proto.Expression_FieldReference_MaskedReference{
-			MaskedReference: r.ToProto(),
-		}
-	}
-
-	if f.Root != RootReference {
-		switch r := f.Root.(type) {
-		case Expression:
-			ret.RootType = &proto.Expression_FieldReference_Expression{
-				Expression: r.ToProto(),
-			}
-		case OuterReference:
-			ret.RootType = &proto.Expression_FieldReference_OuterReference_{
-				OuterReference: &proto.Expression_FieldReference_OuterReference{
-					StepsOut: uint32(r),
-				},
-			}
-		case LambdaParameterReference:
-			ret.RootType = &proto.Expression_FieldReference_LambdaParameterReference_{
-				LambdaParameterReference: &proto.Expression_FieldReference_LambdaParameterReference{
-					StepsOut: r.StepsOut,
-				},
-			}
-		}
-	} else {
-		ret.RootType = &proto.Expression_FieldReference_RootReference_{
-			RootReference: &proto.Expression_FieldReference_RootReference{},
-		}
-	}
-
-	return ret
-}
-
-func (f *FieldReference) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_Selection{
-			Selection: f.ToProtoFieldRef(),
-		},
-	}
-}
 
 func (f *FieldReference) Equals(rhs Expression) bool {
 	if rhs, ok := rhs.(*FieldReference); ok {
