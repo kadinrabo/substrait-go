@@ -24,6 +24,8 @@ func RelToProto(rel plan.Rel) *proto.Rel {
 		return extensionTableReadRelToProto(r)
 	case *plan.IcebergTableReadRel:
 		return icebergTableReadRelToProto(r)
+	case *plan.LocalFileReadRel:
+		return localFileReadRelToProto(r)
 	default:
 		panic(fmt.Sprintf("wire: unhandled relation %T", rel))
 	}
@@ -109,4 +111,63 @@ func icebergTableReadRelToProto(n *plan.IcebergTableReadRel) *proto.Rel {
 	}
 
 	return &proto.Rel{RelType: &proto.Rel_Read{Read: readRel}}
+}
+
+func localFileReadRelToProto(lf *plan.LocalFileReadRel) *proto.Rel {
+	items := make([]*proto.ReadRel_LocalFiles_FileOrFiles, len(lf.Items()))
+	for i := range lf.Items() {
+		item := lf.Item(i)
+		items[i] = fileOrFilesToProto(&item)
+	}
+
+	readRel := baseReadRelToProto(&lf.RelCommon, lf.ReadRelAdvancedExtension(), lf)
+	readRel.ReadType = &proto.ReadRel_LocalFiles_{
+		LocalFiles: &proto.ReadRel_LocalFiles{
+			Items:             items,
+			AdvancedExtension: lf.GetAdvancedExtension(),
+		},
+	}
+	return &proto.Rel{RelType: &proto.Rel_Read{Read: readRel}}
+}
+
+func fileOrFilesToProto(f *plan.FileOrFiles) *proto.ReadRel_LocalFiles_FileOrFiles {
+	ret := &proto.ReadRel_LocalFiles_FileOrFiles{
+		PartitionIndex: f.PartIndex,
+		Start:          f.Start,
+		Length:         f.Len,
+	}
+	switch f.PathType {
+	case plan.URIPath:
+		ret.PathType = &proto.ReadRel_LocalFiles_FileOrFiles_UriPath{UriPath: f.Path}
+	case plan.URIPathGlob:
+		ret.PathType = &proto.ReadRel_LocalFiles_FileOrFiles_UriPathGlob{UriPathGlob: f.Path}
+	case plan.URIFile:
+		ret.PathType = &proto.ReadRel_LocalFiles_FileOrFiles_UriFile{UriFile: f.Path}
+	case plan.URIFolder:
+		ret.PathType = &proto.ReadRel_LocalFiles_FileOrFiles_UriFolder{UriFolder: f.Path}
+	}
+
+	switch fm := f.Format.(type) {
+	case *plan.ParquetReadOptions:
+		ret.FileFormat = &proto.ReadRel_LocalFiles_FileOrFiles_Parquet{
+			Parquet: (*proto.ReadRel_LocalFiles_FileOrFiles_ParquetReadOptions)(fm),
+		}
+	case *plan.ArrowReadOptions:
+		ret.FileFormat = &proto.ReadRel_LocalFiles_FileOrFiles_Arrow{
+			Arrow: (*proto.ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions)(fm),
+		}
+	case *plan.OrcReadOptions:
+		ret.FileFormat = &proto.ReadRel_LocalFiles_FileOrFiles_Orc{
+			Orc: (*proto.ReadRel_LocalFiles_FileOrFiles_OrcReadOptions)(fm),
+		}
+	case *plan.DwrfReadOptions:
+		ret.FileFormat = &proto.ReadRel_LocalFiles_FileOrFiles_Dwrf{
+			Dwrf: (*proto.ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions)(fm),
+		}
+	case *plan.ExtensionReadOptions:
+		ret.FileFormat = &proto.ReadRel_LocalFiles_FileOrFiles_Extension{
+			Extension: (*anypb.Any)(fm),
+		}
+	}
+	return ret
 }
