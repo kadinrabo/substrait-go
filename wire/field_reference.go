@@ -150,3 +150,23 @@ func maskListSelectItemToProto(s expr.MaskListSelectItem) *proto.Expression_Mask
 		panic(fmt.Sprintf("wire: unhandled mask selection %T", s))
 	}
 }
+
+func maskMapSelectToProto(m *expr.MaskMapSelect) *proto.Expression_MaskExpression_Select {
+	mapSelect := &proto.Expression_MaskExpression_Select_Map{
+		Map: &proto.Expression_MaskExpression_MapSelect{
+			Child: maskSelectToProto(m.Child()),
+		},
+	}
+
+	if m.KeyKind() == expr.MapSelectKey {
+		mapSelect.Map.Select = &proto.Expression_MaskExpression_MapSelect_Key{
+			Key: &proto.Expression_MaskExpression_MapSelect_MapKey{MapKey: m.Key()},
+		}
+	} else {
+		mapSelect.Map.Select = &proto.Expression_MaskExpression_MapSelect_Expression{
+			Expression: &proto.Expression_MaskExpression_MapSelect_MapKeyExpression{MapKeyExpression: m.Key()},
+		}
+	}
+
+	return &proto.Expression_MaskExpression_Select{Type: mapSelect}
+}

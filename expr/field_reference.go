@@ -407,31 +407,6 @@ func (m *MaskMapSelect) Child() MaskSelect {
 	return m.child
 }
 
-func (m *MaskMapSelect) ToProto() *proto.Expression_MaskExpression_Select {
-	ret := &proto.Expression_MaskExpression_Select_Map{
-		Map: &proto.Expression_MaskExpression_MapSelect{
-			Child: m.child.ToProto(),
-		},
-	}
-
-	if m.kind == MapSelectKey {
-		ret.Map.Select = &proto.Expression_MaskExpression_MapSelect_Key{
-			Key: &proto.Expression_MaskExpression_MapSelect_MapKey{
-				MapKey: m.key,
-			},
-		}
-	} else {
-		ret.Map.Select = &proto.Expression_MaskExpression_MapSelect_Expression{
-			Expression: &proto.Expression_MaskExpression_MapSelect_MapKeyExpression{
-				MapKeyExpression: m.key,
-			},
-		}
-	}
-	return &proto.Expression_MaskExpression_Select{
-		Type: ret,
-	}
-}
-
 type Reference interface {
 	isRefType()
 }
