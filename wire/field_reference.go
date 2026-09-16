@@ -38,6 +38,21 @@ func mapKeyRefToProto(r *expr.MapKeyRef) *proto.Expression_ReferenceSegment {
 	}
 }
 
+func structFieldRefToProto(r *expr.StructFieldRef) *proto.Expression_ReferenceSegment {
+	var child *proto.Expression_ReferenceSegment
+	if r.Child != nil {
+		child = RefSegmentToProto(r.Child)
+	}
+	return &proto.Expression_ReferenceSegment{
+		ReferenceType: &proto.Expression_ReferenceSegment_StructField_{
+			StructField: &proto.Expression_ReferenceSegment_StructField{
+				Field: r.Field,
+				Child: child,
+			},
+		},
+	}
+}
+
 func maskSelectToProto(s expr.MaskSelect) *proto.Expression_MaskExpression_Select {
 	switch s := s.(type) {
 	case expr.MaskStructSelect:

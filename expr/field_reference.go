@@ -186,22 +186,6 @@ func (r *StructFieldRef) GetType(parentType types.Type) (types.Type, error) {
 	return st.Types[r.Field], nil
 }
 
-func (r *StructFieldRef) ToProto() *proto.Expression_ReferenceSegment {
-	var c *proto.Expression_ReferenceSegment
-	if r.Child != nil {
-		c = r.Child.ToProto()
-	}
-
-	return &proto.Expression_ReferenceSegment{
-		ReferenceType: &proto.Expression_ReferenceSegment_StructField_{
-			StructField: &proto.Expression_ReferenceSegment_StructField{
-				Field: r.Field,
-				Child: c,
-			},
-		},
-	}
-}
-
 func (r *StructFieldRef) GetChild() ReferenceSegment { return r.Child }
 func (r *StructFieldRef) Equals(rhs ReferenceSegment) bool {
 	if rhs, ok := rhs.(*StructFieldRef); ok {
