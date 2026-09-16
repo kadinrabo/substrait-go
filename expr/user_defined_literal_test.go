@@ -11,6 +11,7 @@ import (
 	"github.com/substrait-io/substrait-go/v9/extensions"
 	"github.com/substrait-io/substrait-go/v9/literal"
 	"github.com/substrait-io/substrait-go/v9/types"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -51,7 +52,7 @@ func TestUserDefinedLiteralRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, pointLiteral)
 
-	protoLiteral := pointLiteral.ToProtoLiteral()
+	protoLiteral := wire.LiteralToProto(pointLiteral)
 	require.NotNil(t, protoLiteral)
 
 	roundTripPointLiteral := expr.LiteralFromProto(protoLiteral)
@@ -134,7 +135,7 @@ func TestUserDefinedLiteralWithAnyRepresentation(t *testing.T) {
 		},
 	}
 
-	protoLiteral := pointLiteral.ToProtoLiteral()
+	protoLiteral := wire.LiteralToProto(pointLiteral)
 	require.NotNil(t, protoLiteral)
 
 	roundTrip := expr.LiteralFromProto(protoLiteral)
@@ -164,7 +165,7 @@ func TestUserDefinedLiteralWithStructRepresentation(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, pointLiteral)
 
-	protoLiteral := pointLiteral.ToProtoLiteral()
+	protoLiteral := wire.LiteralToProto(pointLiteral)
 	require.NotNil(t, protoLiteral)
 
 	roundTrip := expr.LiteralFromProto(protoLiteral)
@@ -195,7 +196,7 @@ func TestNestedUserDefinedLiteralWithAnyRepresentation(t *testing.T) {
 		},
 	}
 
-	protoLiteral := triangleLiteral.ToProtoLiteral()
+	protoLiteral := wire.LiteralToProto(triangleLiteral)
 	require.NotNil(t, protoLiteral)
 
 	roundTrip := expr.LiteralFromProto(protoLiteral)
@@ -257,7 +258,7 @@ func TestNestedUserDefinedLiteralWithStructRepresentation(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, triangle)
 
-	protoExpression := triangle.ToProtoLiteral()
+	protoExpression := wire.LiteralToProto(triangle)
 	require.NotNil(t, protoExpression)
 
 	result := expr.LiteralFromProto(protoExpression)
@@ -302,7 +303,7 @@ func TestMixedRepresentationNestedUserDefinedLiteral(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, triangle)
 
-	protoExpression := triangle.ToProtoLiteral()
+	protoExpression := wire.LiteralToProto(triangle)
 	require.NotNil(t, protoExpression)
 
 	result := expr.LiteralFromProto(protoExpression)
@@ -336,7 +337,7 @@ func TestParameterizedVectorUDTRoundtrip(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, vectorI32)
 
-	protoExpression := vectorI32.ToProtoLiteral()
+	protoExpression := wire.LiteralToProto(vectorI32)
 	require.NotNil(t, protoExpression)
 
 	result := expr.LiteralFromProto(protoExpression)

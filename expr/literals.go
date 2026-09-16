@@ -89,8 +89,6 @@ type Literal interface {
 	// Equals only returns true if the rhs is a literal of the exact
 	// same type and value.
 	Equals(Expression) bool
-	ToProto() *proto.Expression
-	ToProtoLiteral() *proto.Expression_Literal
 	Visit(VisitFunc) Expression
 	// ValueString returns a human presentable representation of just the literal's value.
 	ValueString() string
