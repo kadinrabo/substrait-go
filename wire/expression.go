@@ -29,6 +29,8 @@ func ExprToProto(e expr.Expression) *proto.Expression {
 		return mapExprToProto(e)
 	case *expr.StructExpr:
 		return structExprToProto(e)
+	case *expr.ListExpr:
+		return listExprToProto(e)
 	case *expr.ScalarFunction:
 		return scalarFunctionToProto(e)
 	case *expr.WindowFunction:
@@ -189,6 +191,24 @@ func structExprToProto(ex *expr.StructExpr) *proto.Expression {
 				TypeVariationReference: ex.TypeVariationRef,
 				NestedType: &proto.Expression_Nested_Struct_{
 					Struct: &proto.Expression_Nested_Struct{Fields: fields},
+				},
+			},
+		},
+	}
+}
+
+func listExprToProto(ex *expr.ListExpr) *proto.Expression {
+	vals := make([]*proto.Expression, len(ex.Values))
+	for i, v := range ex.Values {
+		vals[i] = ExprToProto(v)
+	}
+	return &proto.Expression{
+		RexType: &proto.Expression_Nested_{
+			Nested: &proto.Expression_Nested{
+				Nullable:               ex.Nullable,
+				TypeVariationReference: ex.TypeVariationRef,
+				NestedType: &proto.Expression_Nested_List_{
+					List: &proto.Expression_Nested_List{Values: vals},
 				},
 			},
 		},
