@@ -2011,25 +2011,6 @@ func (wr *NamedTableWriteRel) OutputMode() OutputMode {
 	return wr.outputMode
 }
 
-func (wr *NamedTableWriteRel) ToProto() *proto.Rel {
-	return &proto.Rel{
-		RelType: &proto.Rel_Write{
-			Write: &proto.WriteRel{
-				Common: wr.toProto(),
-				WriteType: &proto.WriteRel_NamedTable{
-					NamedTable: &proto.NamedObjectWrite{
-						Names:             wr.names,
-						AdvancedExtension: wr.advExtension,
-					},
-				},
-				TableSchema: wr.tableSchema.ToProto(),
-				Op:          proto.WriteRel_WriteOp(wr.op),
-				Input:       wr.input.ToProto(),
-			},
-		},
-	}
-}
-
 func (wr *NamedTableWriteRel) ToProtoPlanRel() *proto.PlanRel {
 	return &proto.PlanRel{
 		RelType: &proto.PlanRel_Rel{

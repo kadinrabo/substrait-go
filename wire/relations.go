@@ -46,6 +46,8 @@ func RelToProto(rel plan.Rel) *proto.Rel {
 		return hashJoinRelToProto(r)
 	case *plan.MergeJoinRel:
 		return mergeJoinRelToProto(r)
+	case *plan.NamedTableWriteRel:
+		return namedTableWriteRelToProto(r)
 	default:
 		panic(fmt.Sprintf("wire: unhandled relation %T", rel))
 	}
@@ -452,4 +454,23 @@ func tryEqualityJoinKeysToLegacyProto(keys []*plan.ComparisonJoinKey) (leftKeys,
 		rightKeys[i] = fieldReferenceRefToProto(k.Right())
 	}
 	return leftKeys, rightKeys, true
+}
+
+func namedTableWriteRelToProto(wr *plan.NamedTableWriteRel) *proto.Rel {
+	return &proto.Rel{
+		RelType: &proto.Rel_Write{
+			Write: &proto.WriteRel{
+				Common: relCommonToProto(&wr.RelCommon),
+				WriteType: &proto.WriteRel_NamedTable{
+					NamedTable: &proto.NamedObjectWrite{
+						Names:             wr.Names(),
+						AdvancedExtension: wr.NamedTableAdvancedExtension(),
+					},
+				},
+				TableSchema: NamedStructToProto(wr.TableSchema()),
+				Op:          proto.WriteRel_WriteOp(wr.Op()),
+				Input:       RelToProto(wr.Input()),
+			},
+		},
+	}
 }
