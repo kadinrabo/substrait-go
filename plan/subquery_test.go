@@ -86,7 +86,7 @@ func TestInPredicateSubquery(t *testing.T) {
 	assert.True(t, expectedType.Equals(subquery.GetType()))
 
 	// Test protobuf conversion
-	proto := subquery.ToProto()
+	proto := wire.ExprToProto(subquery)
 	require.NotNil(t, proto)
 	require.NotNil(t, proto.GetSubquery())
 	require.NotNil(t, proto.GetSubquery().GetInPredicate())
@@ -124,7 +124,7 @@ func TestInPredicateSubqueryValidConstruction(t *testing.T) {
 	assert.NotNil(t, validSubquery.Haystack)
 
 	// Test protobuf conversion doesn't have UNSPECIFIED values
-	proto := validSubquery.ToProto()
+	proto := wire.ExprToProto(validSubquery)
 	require.NotNil(t, proto)
 	require.NotNil(t, proto.GetSubquery())
 	require.NotNil(t, proto.GetSubquery().GetInPredicate())

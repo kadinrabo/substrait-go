@@ -166,26 +166,6 @@ func (s *InPredicateSubquery) GetType() types.Type {
 	return &types.BooleanType{Nullability: types.NullabilityRequired}
 }
 
-func (s *InPredicateSubquery) ToProto() *proto.Expression {
-	needles := make([]*proto.Expression, len(s.Needles))
-	for i, needle := range s.Needles {
-		needles[i] = needle.ToProto()
-	}
-
-	return &proto.Expression{
-		RexType: &proto.Expression_Subquery_{
-			Subquery: &proto.Expression_Subquery{
-				SubqueryType: &proto.Expression_Subquery_InPredicate_{
-					InPredicate: &proto.Expression_Subquery_InPredicate{
-						Needles:  needles,
-						Haystack: s.Haystack.ToProto(),
-					},
-				},
-			},
-		},
-	}
-}
-
 func (s *InPredicateSubquery) Equals(other expr.Expression) bool {
 	otherInPredicate, ok := other.(*InPredicateSubquery)
 	if !ok {
