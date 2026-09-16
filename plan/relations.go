@@ -740,7 +740,8 @@ func (j *JoinRel) PostJoinFilter() expr.Expression {
 	}
 	return j.postJoinFilter
 }
-func (j *JoinRel) Type() JoinType { return j.joinType }
+func (j *JoinRel) RawPostJoinFilter() expr.Expression { return j.postJoinFilter }
+func (j *JoinRel) Type() JoinType                     { return j.joinType }
 func (j *JoinRel) GetAdvancedExtension() *extensions.AdvancedExtension {
 	return j.advExtension
 }
@@ -748,27 +749,6 @@ func (j *JoinRel) SetAdvancedExtension(advExtension *extensions.AdvancedExtensio
 	existing := j.advExtension
 	j.advExtension = advExtension
 	return existing
-}
-
-func (j *JoinRel) ToProto() *proto.Rel {
-	outRel := &proto.JoinRel{
-		Common:            j.toProto(),
-		Left:              j.left.ToProto(),
-		Right:             j.right.ToProto(),
-		Expression:        j.expr.ToProto(),
-		Type:              proto.JoinRel_JoinType(j.joinType),
-		AdvancedExtension: j.advExtension,
-	}
-
-	if j.postJoinFilter != nil {
-		outRel.PostJoinFilter = j.postJoinFilter.ToProto()
-	}
-
-	return &proto.Rel{
-		RelType: &proto.Rel_Join{
-			Join: outRel,
-		},
-	}
 }
 
 func (j *JoinRel) ToProtoPlanRel() *proto.PlanRel {

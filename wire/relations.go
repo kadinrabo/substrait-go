@@ -40,6 +40,8 @@ func RelToProto(rel plan.Rel) *proto.Rel {
 		return setRelToProto(r)
 	case *plan.CrossRel:
 		return crossRelToProto(r)
+	case *plan.JoinRel:
+		return joinRelToProto(r)
 	default:
 		panic(fmt.Sprintf("wire: unhandled relation %T", rel))
 	}
@@ -318,4 +320,19 @@ func crossRelToProto(c *plan.CrossRel) *proto.Rel {
 			},
 		},
 	}
+}
+
+func joinRelToProto(j *plan.JoinRel) *proto.Rel {
+	outRel := &proto.JoinRel{
+		Common:            relCommonToProto(&j.RelCommon),
+		Left:              RelToProto(j.Left()),
+		Right:             RelToProto(j.Right()),
+		Expression:        ExprToProto(j.Expr()),
+		Type:              proto.JoinRel_JoinType(j.Type()),
+		AdvancedExtension: j.GetAdvancedExtension(),
+	}
+	if f := j.RawPostJoinFilter(); f != nil {
+		outRel.PostJoinFilter = ExprToProto(f)
+	}
+	return &proto.Rel{RelType: &proto.Rel_Join{Join: outRel}}
 }
