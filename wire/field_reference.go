@@ -68,6 +68,14 @@ func listElementRefToProto(r *expr.ListElementRef) *proto.Expression_ReferenceSe
 	}
 }
 
+// MaskExpressionToProto encodes a mask expression as its protobuf message.
+func MaskExpressionToProto(e *expr.MaskExpression) *proto.Expression_MaskExpression {
+	return &proto.Expression_MaskExpression{
+		Select:                 maskStructSelectToProto(e.Select()),
+		MaintainSingularStruct: e.MaintainSingularStruct(),
+	}
+}
+
 func maskSelectToProto(s expr.MaskSelect) *proto.Expression_MaskExpression_Select {
 	switch s := s.(type) {
 	case expr.MaskStructSelect:

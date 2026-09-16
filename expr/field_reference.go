@@ -277,13 +277,6 @@ type MaskExpression struct {
 }
 
 func (*MaskExpression) isRefType() {}
-func (e *MaskExpression) ToProto() *proto.Expression_MaskExpression {
-	return &proto.Expression_MaskExpression{
-		Select:                 e.sel.toProtoStructSelect(),
-		MaintainSingularStruct: e.maintainSingular,
-	}
-}
-
 func (e *MaskExpression) MaintainSingularStruct() bool {
 	return e.maintainSingular
 }
