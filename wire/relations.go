@@ -26,6 +26,8 @@ func RelToProto(rel plan.Rel) *proto.Rel {
 		return icebergTableReadRelToProto(r)
 	case *plan.LocalFileReadRel:
 		return localFileReadRelToProto(r)
+	case *plan.FilterRel:
+		return filterRelToProto(r)
 	default:
 		panic(fmt.Sprintf("wire: unhandled relation %T", rel))
 	}
@@ -170,4 +172,17 @@ func fileOrFilesToProto(f *plan.FileOrFiles) *proto.ReadRel_LocalFiles_FileOrFil
 		}
 	}
 	return ret
+}
+
+func filterRelToProto(fr *plan.FilterRel) *proto.Rel {
+	return &proto.Rel{
+		RelType: &proto.Rel_Filter{
+			Filter: &proto.FilterRel{
+				Common:            relCommonToProto(&fr.RelCommon),
+				Input:             RelToProto(fr.Input()),
+				Condition:         ExprToProto(fr.Condition()),
+				AdvancedExtension: fr.GetAdvancedExtension(),
+			},
+		},
+	}
 }

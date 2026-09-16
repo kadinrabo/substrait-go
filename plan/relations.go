@@ -1313,19 +1313,6 @@ func (fr *FilterRel) SetAdvancedExtension(advExtension *extensions.AdvancedExten
 	return existing
 }
 
-func (fr *FilterRel) ToProto() *proto.Rel {
-	return &proto.Rel{
-		RelType: &proto.Rel_Filter{
-			Filter: &proto.FilterRel{
-				Common:            fr.toProto(),
-				Input:             fr.input.ToProto(),
-				Condition:         fr.cond.ToProto(),
-				AdvancedExtension: fr.advExtension,
-			},
-		},
-	}
-}
-
 func (fr *FilterRel) ToProtoPlanRel() *proto.PlanRel {
 	return &proto.PlanRel{
 		RelType: &proto.PlanRel_Rel{
