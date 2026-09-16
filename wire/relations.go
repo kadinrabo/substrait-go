@@ -50,6 +50,8 @@ func RelToProto(rel plan.Rel) *proto.Rel {
 		return namedTableWriteRelToProto(r)
 	case *plan.ExtensionSingleRel:
 		return extensionSingleRelToProto(r)
+	case *plan.ExtensionLeafRel:
+		return extensionLeafRelToProto(r)
 	default:
 		panic(fmt.Sprintf("wire: unhandled relation %T", rel))
 	}
@@ -484,6 +486,17 @@ func extensionSingleRelToProto(es *plan.ExtensionSingleRel) *proto.Rel {
 				Common: relCommonToProto(&es.RelCommon),
 				Input:  RelToProto(es.Input()),
 				Detail: es.Detail(),
+			},
+		},
+	}
+}
+
+func extensionLeafRelToProto(el *plan.ExtensionLeafRel) *proto.Rel {
+	return &proto.Rel{
+		RelType: &proto.Rel_ExtensionLeaf{
+			ExtensionLeaf: &proto.ExtensionLeafRel{
+				Common: relCommonToProto(&el.RelCommon),
+				Detail: el.Detail(),
 			},
 		},
 	}

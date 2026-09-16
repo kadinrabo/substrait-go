@@ -1447,17 +1447,6 @@ func (el *ExtensionLeafRel) Detail() *anypb.Any {
 // Definition returns the extension definition if present.
 func (el *ExtensionLeafRel) Definition() ExtensionRelDefinition { return el.definition }
 
-func (el *ExtensionLeafRel) ToProto() *proto.Rel {
-	return &proto.Rel{
-		RelType: &proto.Rel_ExtensionLeaf{
-			ExtensionLeaf: &proto.ExtensionLeafRel{
-				Common: el.toProto(),
-				Detail: el.Detail(),
-			},
-		},
-	}
-}
-
 func (el *ExtensionLeafRel) ToProtoPlanRel() *proto.PlanRel {
 	return &proto.PlanRel{
 		RelType: &proto.PlanRel_Rel{
