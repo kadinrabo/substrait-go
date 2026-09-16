@@ -22,6 +22,8 @@ func RelToProto(rel plan.Rel) *proto.Rel {
 		return virtualTableReadRelToProto(r)
 	case *plan.ExtensionTableReadRel:
 		return extensionTableReadRelToProto(r)
+	case *plan.IcebergTableReadRel:
+		return icebergTableReadRelToProto(r)
 	default:
 		panic(fmt.Sprintf("wire: unhandled relation %T", rel))
 	}
@@ -80,5 +82,31 @@ func extensionTableReadRelToProto(e *plan.ExtensionTableReadRel) *proto.Rel {
 	readRel.ReadType = &proto.ReadRel_ExtensionTable_{
 		ExtensionTable: &proto.ReadRel_ExtensionTable{Detail: e.Detail()},
 	}
+	return &proto.Rel{RelType: &proto.Rel_Read{Read: readRel}}
+}
+
+func icebergTableReadRelToProto(n *plan.IcebergTableReadRel) *proto.Rel {
+	readRel := baseReadRelToProto(&n.RelCommon, n.GetAdvancedExtension(), n)
+
+	if directTableType, ok := n.TableType().(*plan.Direct); ok {
+		direct := &proto.ReadRel_IcebergTable_MetadataFileRead{
+			MetadataUri: directTableType.MetadataUri,
+		}
+		if directTableType.SnapshotId != "" {
+			direct.Snapshot = &proto.ReadRel_IcebergTable_MetadataFileRead_SnapshotId{
+				SnapshotId: string(directTableType.SnapshotId),
+			}
+		} else if directTableType.SnapshotTimestamp != 0 {
+			direct.Snapshot = &proto.ReadRel_IcebergTable_MetadataFileRead_SnapshotTimestamp{
+				SnapshotTimestamp: int64(directTableType.SnapshotTimestamp),
+			}
+		}
+		readRel.ReadType = &proto.ReadRel_IcebergTable_{
+			IcebergTable: &proto.ReadRel_IcebergTable{
+				TableType: &proto.ReadRel_IcebergTable_Direct{Direct: direct},
+			},
+		}
+	}
+
 	return &proto.Rel{RelType: &proto.Rel_Read{Read: readRel}}
 }
