@@ -53,7 +53,6 @@ type (
 
 	Bound interface {
 		fmt.Stringer
-		ToProto() *proto.Expression_WindowFunction_Bound
 	}
 
 	PrecedingBound int64
@@ -61,20 +60,6 @@ type (
 	CurrentRow     struct{}
 	Unbounded      struct{}
 )
-
-func (s *SortField) ToProto() *proto.SortField {
-	ret := &proto.SortField{Expr: s.Expr.ToProto()}
-	switch k := s.Kind.(type) {
-	case types.SortDirection:
-		ret.SortKind = &proto.SortField_Direction{
-			Direction: proto.SortField_SortDirection(k)}
-	case types.FunctionRef:
-		ret.SortKind = &proto.SortField_ComparisonFunctionReference{
-			ComparisonFunctionReference: uint32(k)}
-	}
-
-	return ret
-}
 
 func SortFieldFromProto(
 	f *proto.SortField, baseSchema *types.RecordType, reg ExtensionRegistry,

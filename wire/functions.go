@@ -130,3 +130,17 @@ func AggregateFunctionToProto(a *expr.AggregateFunction) *proto.AggregateFunctio
 		Invocation:        proto.AggregateFunction_AggregationInvocation(a.Invocation()),
 	}
 }
+
+// SortFieldToProto encodes a sort field as its protobuf message.
+func SortFieldToProto(s *expr.SortField) *proto.SortField {
+	ret := &proto.SortField{Expr: ExprToProto(s.Expr)}
+	switch k := s.Kind.(type) {
+	case types.SortDirection:
+		ret.SortKind = &proto.SortField_Direction{
+			Direction: proto.SortField_SortDirection(k)}
+	case types.FunctionRef:
+		ret.SortKind = &proto.SortField_ComparisonFunctionReference{
+			ComparisonFunctionReference: uint32(k)}
+	}
+	return ret
+}
