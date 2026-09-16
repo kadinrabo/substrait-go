@@ -55,3 +55,20 @@ func setPredicateSubqueryToProto(s *plan.SetPredicateSubquery) *proto.Expression
 		},
 	}
 }
+
+func setComparisonSubqueryToProto(s *plan.SetComparisonSubquery) *proto.Expression {
+	return &proto.Expression{
+		RexType: &proto.Expression_Subquery_{
+			Subquery: &proto.Expression_Subquery{
+				SubqueryType: &proto.Expression_Subquery_SetComparison_{
+					SetComparison: &proto.Expression_Subquery_SetComparison{
+						ReductionOp:  proto.Expression_Subquery_SetComparison_ReductionOp(s.ReductionOp),
+						ComparisonOp: proto.Expression_Subquery_SetComparison_ComparisonOp(s.ComparisonOp),
+						Left:         ExprToProto(s.Left),
+						Right:        RelToProto(s.Right),
+					},
+				},
+			},
+		},
+	}
+}

@@ -372,23 +372,6 @@ func (s *SetComparisonSubquery) GetType() types.Type {
 	return &types.BooleanType{Nullability: types.NullabilityRequired}
 }
 
-func (s *SetComparisonSubquery) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_Subquery_{
-			Subquery: &proto.Expression_Subquery{
-				SubqueryType: &proto.Expression_Subquery_SetComparison_{
-					SetComparison: &proto.Expression_Subquery_SetComparison{
-						ReductionOp:  proto.Expression_Subquery_SetComparison_ReductionOp(s.ReductionOp),
-						ComparisonOp: proto.Expression_Subquery_SetComparison_ComparisonOp(s.ComparisonOp),
-						Left:         s.Left.ToProto(),
-						Right:        s.Right.ToProto(),
-					},
-				},
-			},
-		},
-	}
-}
-
 func (s *SetComparisonSubquery) Equals(other expr.Expression) bool {
 	otherSetComparison, ok := other.(*SetComparisonSubquery)
 	if !ok {

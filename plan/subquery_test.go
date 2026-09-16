@@ -227,7 +227,7 @@ func TestSetComparisonSubquery(t *testing.T) {
 	assert.True(t, expectedType.Equals(subquery.GetType()))
 
 	// Test protobuf conversion
-	proto := subquery.ToProto()
+	proto := wire.ExprToProto(subquery)
 	require.NotNil(t, proto)
 	require.NotNil(t, proto.GetSubquery())
 	require.NotNil(t, proto.GetSubquery().GetSetComparison())
@@ -327,7 +327,7 @@ func TestSetComparisonSubqueryValidConstruction(t *testing.T) {
 	assert.Nil(t, bothNilSubquery.Right)
 
 	// Test protobuf conversion with valid arguments
-	protoMsg := anyEqSubquery.ToProto()
+	protoMsg := wire.ExprToProto(anyEqSubquery)
 	require.NotNil(t, protoMsg)
 	require.NotNil(t, protoMsg.GetSubquery())
 	require.NotNil(t, protoMsg.GetSubquery().GetSetComparison())
