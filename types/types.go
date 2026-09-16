@@ -1707,21 +1707,6 @@ func (t *UserDefinedType) Equals(rhs Type) bool {
 	return false
 }
 
-func (t *UserDefinedType) ToProto() *proto.Type {
-	params := make([]*proto.Type_Parameter, len(t.TypeParameters))
-	for i, p := range t.TypeParameters {
-		params[i] = p.ToProto()
-	}
-
-	return &proto.Type{Kind: &proto.Type_UserDefined_{
-		UserDefined: &proto.Type_UserDefined{
-			Nullability:            proto.Type_Nullability(t.Nullability),
-			TypeVariationReference: t.TypeVariationRef,
-			TypeReference:          t.TypeReference,
-			TypeParameters:         params,
-		}}}
-}
-
 func (t *UserDefinedType) ToProtoFuncArg() *proto.FunctionArgument {
 	return &proto.FunctionArgument{
 		ArgType: &proto.FunctionArgument_Type{Type: t.ToProto()},
