@@ -1393,18 +1393,6 @@ func (es *ExtensionSingleRel) Detail() *anypb.Any {
 // Definition returns the extension definition if present.
 func (es *ExtensionSingleRel) Definition() ExtensionRelDefinition { return es.definition }
 
-func (es *ExtensionSingleRel) ToProto() *proto.Rel {
-	return &proto.Rel{
-		RelType: &proto.Rel_ExtensionSingle{
-			ExtensionSingle: &proto.ExtensionSingleRel{
-				Common: es.toProto(),
-				Input:  es.input.ToProto(),
-				Detail: es.Detail(),
-			},
-		},
-	}
-}
-
 func (es *ExtensionSingleRel) ToProtoPlanRel() *proto.PlanRel {
 	return &proto.PlanRel{
 		RelType: &proto.PlanRel_Rel{

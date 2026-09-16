@@ -48,6 +48,8 @@ func RelToProto(rel plan.Rel) *proto.Rel {
 		return mergeJoinRelToProto(r)
 	case *plan.NamedTableWriteRel:
 		return namedTableWriteRelToProto(r)
+	case *plan.ExtensionSingleRel:
+		return extensionSingleRelToProto(r)
 	default:
 		panic(fmt.Sprintf("wire: unhandled relation %T", rel))
 	}
@@ -470,6 +472,18 @@ func namedTableWriteRelToProto(wr *plan.NamedTableWriteRel) *proto.Rel {
 				TableSchema: NamedStructToProto(wr.TableSchema()),
 				Op:          proto.WriteRel_WriteOp(wr.Op()),
 				Input:       RelToProto(wr.Input()),
+			},
+		},
+	}
+}
+
+func extensionSingleRelToProto(es *plan.ExtensionSingleRel) *proto.Rel {
+	return &proto.Rel{
+		RelType: &proto.Rel_ExtensionSingle{
+			ExtensionSingle: &proto.ExtensionSingleRel{
+				Common: relCommonToProto(&es.RelCommon),
+				Input:  RelToProto(es.Input()),
+				Detail: es.Detail(),
 			},
 		},
 	}
