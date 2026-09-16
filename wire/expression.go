@@ -250,3 +250,12 @@ func ExtendedToProto(ex *expr.Extended) *proto.ExtendedExpression {
 		ReferredExpr:       refs,
 	}
 }
+
+// VirtualTableExpressionValueToProto encodes a virtual-table row of expressions.
+func VirtualTableExpressionValueToProto(s expr.VirtualTableExpressionValue) *proto.Expression_Nested_Struct {
+	fields := make([]*proto.Expression, len(s))
+	for i, f := range s {
+		fields[i] = ExprToProto(f)
+	}
+	return &proto.Expression_Nested_Struct{Fields: fields}
+}

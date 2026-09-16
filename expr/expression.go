@@ -1450,13 +1450,4 @@ func ExtendedFromProto(ex *proto.ExtendedExpression, c *extensions.Collection) (
 	}, nil
 }
 
-func (s VirtualTableExpressionValue) ToProto() *proto.Expression_Nested_Struct {
-	fields := make([]*proto.Expression, len(s))
-	for i, f := range s {
-		fields[i] = f.ToProto()
-	}
-	return &proto.Expression_Nested_Struct{
-		Fields: fields,
-	}
-}
 func (ex *Extended) Registry() *ExtensionRegistry { return &ex.reg }
