@@ -23,6 +23,8 @@ func ExprToProto(e expr.Expression) *proto.Expression {
 		return switchExprToProto(e)
 	case *expr.SingularOrList:
 		return singularOrListToProto(e)
+	case *expr.MultiOrList:
+		return multiOrListToProto(e)
 	case *expr.ScalarFunction:
 		return scalarFunctionToProto(e)
 	case *expr.WindowFunction:
@@ -120,6 +122,30 @@ func singularOrListToProto(ex *expr.SingularOrList) *proto.Expression {
 		RexType: &proto.Expression_SingularOrList_{
 			SingularOrList: &proto.Expression_SingularOrList{
 				Value:   ExprToProto(ex.Value),
+				Options: opts,
+			},
+		},
+	}
+}
+
+func multiOrListToProto(ex *expr.MultiOrList) *proto.Expression {
+	toSlice := func(exprs []expr.Expression) []*proto.Expression {
+		out := make([]*proto.Expression, len(exprs))
+		for i, e := range exprs {
+			out[i] = ExprToProto(e)
+		}
+		return out
+	}
+
+	opts := make([]*proto.Expression_MultiOrList_Record, len(ex.Options))
+	for i, o := range ex.Options {
+		opts[i] = &proto.Expression_MultiOrList_Record{Fields: toSlice(o)}
+	}
+
+	return &proto.Expression{
+		RexType: &proto.Expression_MultiOrList_{
+			MultiOrList: &proto.Expression_MultiOrList{
+				Value:   toSlice(ex.Value),
 				Options: opts,
 			},
 		},

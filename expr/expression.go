@@ -1014,32 +1014,6 @@ func (ex *MultiOrList) GetType() types.Type {
 	return &types.BooleanType{Nullability: types.NullabilityRequired}
 }
 
-func (ex *MultiOrList) ToProto() *proto.Expression {
-	toSlice := func(exprs []Expression) (out []*proto.Expression) {
-		out = make([]*proto.Expression, len(exprs))
-		for i, e := range exprs {
-			out[i] = e.ToProto()
-		}
-		return
-	}
-
-	opts := make([]*proto.Expression_MultiOrList_Record, len(ex.Options))
-	for i, o := range ex.Options {
-		opts[i] = &proto.Expression_MultiOrList_Record{
-			Fields: toSlice(o),
-		}
-	}
-
-	return &proto.Expression{
-		RexType: &proto.Expression_MultiOrList_{
-			MultiOrList: &proto.Expression_MultiOrList{
-				Value:   toSlice(ex.Value),
-				Options: opts,
-			},
-		},
-	}
-}
-
 func (ex *MultiOrList) Equals(other Expression) bool {
 	rhs, ok := other.(*MultiOrList)
 	if !ok {
