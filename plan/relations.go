@@ -1860,7 +1860,8 @@ func (mr *MergeJoinRel) PostJoinFilter() expr.Expression {
 	}
 	return mr.postJoinFilter
 }
-func (mr *MergeJoinRel) Type() HashMergeJoinType { return mr.joinType }
+func (mr *MergeJoinRel) RawPostJoinFilter() expr.Expression { return mr.postJoinFilter }
+func (mr *MergeJoinRel) Type() HashMergeJoinType            { return mr.joinType }
 func (mr *MergeJoinRel) GetAdvancedExtension() *extensions.AdvancedExtension {
 	return mr.advExtension
 }
@@ -1868,31 +1869,6 @@ func (mr *MergeJoinRel) SetAdvancedExtension(advExtension *extensions.AdvancedEx
 	existing := mr.advExtension
 	mr.advExtension = advExtension
 	return existing
-}
-
-func (mr *MergeJoinRel) ToProto() *proto.Rel {
-	ret := &proto.Rel_MergeJoin{
-		MergeJoin: &proto.MergeJoinRel{
-			Common:            mr.toProto(),
-			Left:              mr.left.ToProto(),
-			Right:             mr.right.ToProto(),
-			Keys:              comparisonJoinKeysToProto(mr.keys),
-			Type:              proto.MergeJoinRel_JoinType(mr.joinType),
-			AdvancedExtension: mr.advExtension,
-		},
-	}
-
-	if leftKeys, rightKeys, ok := tryEqualityJoinKeysToLegacyProto(mr.keys); ok {
-		ret.MergeJoin.LeftKeys = leftKeys
-		ret.MergeJoin.RightKeys = rightKeys
-	}
-
-	if mr.postJoinFilter != nil {
-		ret.MergeJoin.PostJoinFilter = mr.postJoinFilter.ToProto()
-	}
-
-	return &proto.Rel{
-		RelType: ret}
 }
 
 func (mr *MergeJoinRel) ToProtoPlanRel() *proto.PlanRel {

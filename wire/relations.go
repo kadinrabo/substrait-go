@@ -44,6 +44,8 @@ func RelToProto(rel plan.Rel) *proto.Rel {
 		return joinRelToProto(r)
 	case *plan.HashJoinRel:
 		return hashJoinRelToProto(r)
+	case *plan.MergeJoinRel:
+		return mergeJoinRelToProto(r)
 	default:
 		panic(fmt.Sprintf("wire: unhandled relation %T", rel))
 	}
@@ -356,6 +358,25 @@ func hashJoinRelToProto(hr *plan.HashJoinRel) *proto.Rel {
 		ret.PostJoinFilter = ExprToProto(f)
 	}
 	return &proto.Rel{RelType: &proto.Rel_HashJoin{HashJoin: ret}}
+}
+
+func mergeJoinRelToProto(mr *plan.MergeJoinRel) *proto.Rel {
+	ret := &proto.MergeJoinRel{
+		Common:            relCommonToProto(&mr.RelCommon),
+		Left:              RelToProto(mr.Left()),
+		Right:             RelToProto(mr.Right()),
+		Keys:              comparisonJoinKeysToProto(mr.Keys()),
+		Type:              proto.MergeJoinRel_JoinType(mr.Type()),
+		AdvancedExtension: mr.GetAdvancedExtension(),
+	}
+	if leftKeys, rightKeys, ok := tryEqualityJoinKeysToLegacyProto(mr.Keys()); ok {
+		ret.LeftKeys = leftKeys
+		ret.RightKeys = rightKeys
+	}
+	if f := mr.RawPostJoinFilter(); f != nil {
+		ret.PostJoinFilter = ExprToProto(f)
+	}
+	return &proto.Rel{RelType: &proto.Rel_MergeJoin{MergeJoin: ret}}
 }
 
 func comparisonJoinKeysToProto(keys []*plan.ComparisonJoinKey) []*proto.ComparisonJoinKey {
