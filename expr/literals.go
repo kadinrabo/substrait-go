@@ -305,30 +305,6 @@ func (t *ByteSliceLiteral[T]) ValueString() string {
 }
 
 func (t *ByteSliceLiteral[T]) GetType() types.Type { return t.Type }
-func (t *ByteSliceLiteral[T]) ToProtoLiteral() *proto.Expression_Literal {
-	lit := &proto.Expression_Literal{
-		Nullable:               t.Type.GetNullability() == types.NullabilityNullable,
-		TypeVariationReference: t.Type.GetTypeVariationReference(),
-	}
-
-	switch v := any(t.Value).(type) {
-	case []byte:
-		lit.LiteralType = &proto.Expression_Literal_Binary{Binary: v}
-	case types.FixedBinary:
-		lit.LiteralType = &proto.Expression_Literal_FixedBinary{FixedBinary: v}
-	case types.UUID:
-		lit.LiteralType = &proto.Expression_Literal_Uuid{Uuid: v}
-	}
-
-	return lit
-}
-
-func (t *ByteSliceLiteral[T]) ToProto() *proto.Expression {
-	return &proto.Expression{RexType: &proto.Expression_Literal_{
-		Literal: t.ToProtoLiteral(),
-	}}
-}
-
 func (t *ByteSliceLiteral[T]) Equals(rhs Expression) bool {
 	if other, ok := rhs.(*ByteSliceLiteral[T]); ok {
 		return t.Type.Equals(other.Type) &&
