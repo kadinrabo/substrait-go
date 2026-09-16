@@ -12,6 +12,7 @@ import (
 	"github.com/substrait-io/substrait-go/v9/extensions"
 	"github.com/substrait-io/substrait-go/v9/plan"
 	"github.com/substrait-io/substrait-go/v9/types"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	"github.com/substrait-io/substrait-protobuf/go/substraitpb"
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -107,7 +108,7 @@ func TestExprBuilder(t *testing.T) {
 				require.NoError(t, err)
 				assert.Equal(t, tt.expected, e.String())
 				// Also test that converting to proto does not panic.
-				e.ToProto()
+				wire.ExprToProto(e)
 			} else {
 				assert.EqualError(t, err, tt.err)
 			}
@@ -164,7 +165,7 @@ window_functions:
 	customType2 := planBuilder.UserDefinedType("extension:test:custom", "custom_type2")
 	customType3 := planBuilder.UserDefinedType("extension:test:custom", "custom_type3")
 
-	anyVal, err := anypb.New(expr.NewPrimitiveLiteral("foo", false).ToProto())
+	anyVal, err := anypb.New(wire.ExprToProto(expr.NewPrimitiveLiteral("foo", false)))
 	require.NoError(t, err)
 
 	customLiteral := planBuilder.GetExprBuilder().Literal(&expr.ProtoLiteral{
@@ -180,7 +181,7 @@ window_functions:
 		customLiteral,
 	).BuildExpr()
 	require.NoError(t, err)
-	scalarProto := scalar.ToProto()
+	scalarProto := wire.ExprToProto(scalar)
 
 	fnCall := scalarProto.GetScalarFunction()
 	require.Len(t, fnCall.Arguments, 1)
@@ -195,7 +196,7 @@ window_functions:
 		customLiteral,
 	).Build()
 	require.NoError(t, err)
-	aggrProto := aggr.ToProto()
+	aggrProto := wire.AggregateFunctionToProto(aggr)
 
 	require.Len(t, aggrProto.Arguments, 1)
 	require.Equal(t, customType2.TypeReference, aggrProto.Arguments[0].GetValue().GetLiteral().GetUserDefined().GetTypeReference())
@@ -209,7 +210,7 @@ window_functions:
 		customLiteral,
 	).Phase(types.AggregationPhaseInitialToResult).Build()
 	require.NoError(t, err)
-	windowProto := window.ToProto()
+	windowProto := wire.ExprToProto(window)
 
 	windowFnCall := windowProto.GetWindowFunction()
 	require.Len(t, windowFnCall.Arguments, 1)
@@ -229,7 +230,7 @@ window_functions:
 	p, err := planBuilder.Plan(project, []string{"output1", "output2"})
 	require.NoError(t, err)
 
-	pp, err := p.ToProto()
+	pp, err := wire.PlanToProto(p)
 	require.NoError(t, err)
 
 	// custom_type1 is referenced as an argument and return type, so should be registered in the extensions

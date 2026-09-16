@@ -15,6 +15,7 @@ import (
 	"github.com/substrait-io/substrait-go/v9/extensions"
 	"github.com/substrait-io/substrait-go/v9/plan"
 	"github.com/substrait-io/substrait-go/v9/types"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	substraitproto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -63,7 +64,7 @@ func TestBasicEmitPlan(t *testing.T) {
 	p, err := b.Plan(root, []string{"a", "b"})
 	require.NoError(t, err)
 
-	protoPlan, err := p.ToProto()
+	protoPlan, err := wire.PlanToProto(p)
 	require.NoError(t, err)
 
 	roundTrip, err := plan.FromProto(protoPlan, extensions.GetDefaultCollectionWithNoError())
@@ -96,7 +97,7 @@ func TestEmitEmptyPlan(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, "NSTRUCT<a: fp32, b: string>", p.GetRoots()[0].RecordType().String())
 
-	protoPlan, err := p.ToProto()
+	protoPlan, err := wire.PlanToProto(p)
 	require.NoError(t, err)
 
 	roundTrip, err := plan.FromProto(protoPlan, extensions.GetDefaultCollectionWithNoError())
@@ -148,7 +149,7 @@ func TestFailedMappingOfMapping(t *testing.T) {
 
 func checkRoundTrip(t *testing.T, expectedJSON string, p *plan.Plan) {
 	t.Helper()
-	protoPlan, err := p.ToProto()
+	protoPlan, err := wire.PlanToProto(p)
 	require.NoError(t, err)
 
 	var expectedProto substraitproto.Plan
@@ -164,7 +165,7 @@ func checkRoundTrip(t *testing.T, expectedJSON string, p *plan.Plan) {
 	roundTrip, err := plan.FromProto(&expectedProto, extensions.GetDefaultCollectionWithNoError())
 	require.NoError(t, err)
 
-	roundTripProto, err := roundTrip.ToProto()
+	roundTripProto, err := wire.PlanToProto(roundTrip)
 	require.NoError(t, err)
 
 	assert.Truef(t, proto.Equal(protoPlan, roundTripProto), "plan expected: %s\ngot: %s",

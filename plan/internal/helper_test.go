@@ -40,8 +40,8 @@ func TestVirtualTableExpressionFromProto(t *testing.T) {
 	collection := ext.GetDefaultCollectionWithNoError()
 	extSet, err := ext.GetExtensionSet(&plan, collection)
 	require.NoError(t, err)
-	literal1 := expr.NewPrimitiveLiteral(int32(1), false)
-	expr1 := literal1.ToProto()
+	expr1 := &proto.Expression{RexType: &proto.Expression_Literal_{
+		Literal: &proto.Expression_Literal{LiteralType: &proto.Expression_Literal_I32{I32: 1}}}}
 
 	reg := expr.NewExtensionRegistry(extSet, collection)
 	rows := &proto.Expression_Nested_Struct{Fields: []*proto.Expression{
