@@ -345,24 +345,6 @@ type MaskSelect interface {
 
 type MaskStructSelect []MaskStructItem
 
-func (m MaskStructSelect) toProtoStructSelect() *proto.Expression_MaskExpression_StructSelect {
-	items := make([]*proto.Expression_MaskExpression_StructItem, len(m))
-	for i, item := range m {
-		items[i] = item.ToProto()
-	}
-	return &proto.Expression_MaskExpression_StructSelect{
-		StructItems: items,
-	}
-}
-
-func (m MaskStructSelect) ToProto() *proto.Expression_MaskExpression_Select {
-	return &proto.Expression_MaskExpression_Select{
-		Type: &proto.Expression_MaskExpression_Select_Struct{
-			Struct: m.toProtoStructSelect(),
-		},
-	}
-}
-
 type MaskStructItem struct {
 	field int32
 	child MaskSelect

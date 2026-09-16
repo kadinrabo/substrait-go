@@ -76,6 +76,14 @@ func MaskExpressionToProto(e *expr.MaskExpression) *proto.Expression_MaskExpress
 	}
 }
 
+func maskStructSelectToProto(m expr.MaskStructSelect) *proto.Expression_MaskExpression_StructSelect {
+	items := make([]*proto.Expression_MaskExpression_StructItem, len(m))
+	for i := range m {
+		items[i] = maskStructItemToProto(&m[i])
+	}
+	return &proto.Expression_MaskExpression_StructSelect{StructItems: items}
+}
+
 func maskSelectToProto(s expr.MaskSelect) *proto.Expression_MaskExpression_Select {
 	switch s := s.(type) {
 	case expr.MaskStructSelect:
