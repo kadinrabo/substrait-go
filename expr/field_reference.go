@@ -44,7 +44,6 @@ type ReferenceSegment interface {
 	fmt.Stringer
 	GetChild() ReferenceSegment
 	GetType(types.Type) (types.Type, error)
-	ToProto() *proto.Expression_ReferenceSegment
 	Equals(ReferenceSegment) bool
 }
 
@@ -397,7 +396,6 @@ func maskSelectFromProto(p *proto.Expression_MaskExpression_Select) MaskSelect {
 }
 
 type MaskSelect interface {
-	ToProto() *proto.Expression_MaskExpression_Select
 }
 
 type MaskStructSelect []MaskStructItem
@@ -427,6 +425,7 @@ type MaskStructItem struct {
 
 func (m *MaskStructItem) Field() int32      { return m.field }
 func (m *MaskStructItem) Child() MaskSelect { return m.child }
+
 func (m *MaskStructItem) ToProto() *proto.Expression_MaskExpression_StructItem {
 	var childProto *proto.Expression_MaskExpression_Select
 	if m.child != nil {
@@ -499,7 +498,6 @@ type MaskListSlice struct {
 func (m *MaskListSlice) GetBounds() (start, end int32) {
 	return m.Start, m.End
 }
-
 func (m *MaskListSlice) ToProto() *proto.Expression_MaskExpression_ListSelect_ListSelectItem {
 	return &proto.Expression_MaskExpression_ListSelect_ListSelectItem{
 		Type: &proto.Expression_MaskExpression_ListSelect_ListSelectItem_Slice{
