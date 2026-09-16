@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/substrait-io/substrait-go/v9/types"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/testing/protocmp"
@@ -20,7 +21,7 @@ import (
 func TestVersionFromProtoNilIsUnset(t *testing.T) {
 	unset := types.VersionFromProto(nil)
 	assert.Equal(t, "0.0.0 (UNSET)", unset.String())
-	assert.Equal(t, "UNSET", types.VersionToProto(unset).GetProducer())
+	assert.Equal(t, "UNSET", wire.VersionToProto(unset).GetProducer())
 }
 
 func TestVersionString(t *testing.T) {
@@ -90,7 +91,7 @@ func TestVersionRoundTrip(t *testing.T) {
 			assert.Equal(t, td.protoVersion.GetGitHash(), domain.GitHash)
 			assert.Equal(t, td.protoVersion.GetProducer(), domain.Producer)
 
-			if diff := cmp.Diff(td.protoVersion, types.VersionToProto(domain), protocmp.Transform()); diff != "" {
+			if diff := cmp.Diff(td.protoVersion, wire.VersionToProto(domain), protocmp.Transform()); diff != "" {
 				t.Errorf("version proto didn't match, diff:\n%v", diff)
 			}
 		})

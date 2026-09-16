@@ -57,17 +57,6 @@ func VersionFromProto(v *proto.Version) Version {
 	}
 }
 
-// VersionToProto encodes a version as its protobuf message.
-func VersionToProto(v Version) *proto.Version {
-	return &proto.Version{
-		MajorNumber: v.MajorNumber,
-		MinorNumber: v.MinorNumber,
-		PatchNumber: v.PatchNumber,
-		GitHash:     v.GitHash,
-		Producer:    v.Producer,
-	}
-}
-
 // FunctionOption is a named function behavior option: its name and the producer's ordered list of
 // acceptable preference values, mirroring the fields of the Substrait FunctionOption message.
 type FunctionOption struct {
