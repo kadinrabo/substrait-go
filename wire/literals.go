@@ -45,6 +45,8 @@ func LiteralToProto(l expr.Literal) *proto.Expression_Literal {
 		return nestedLiteralToProto(l)
 	case *expr.NestedLiteral[expr.ListLiteralValue]:
 		return nestedLiteralToProto(l)
+	case *expr.MapLiteral:
+		return mapLiteralToProto(l)
 	default:
 		panic(fmt.Sprintf("wire: unhandled literal %T", l))
 	}
@@ -123,6 +125,32 @@ func nestedLiteralToProto[T expr.StructLiteralValue | expr.ListLiteralValue](l *
 			lit.LiteralType = &proto.Expression_Literal_List_{
 				List: &proto.Expression_Literal_List{Values: vals},
 			}
+		}
+	}
+
+	return lit
+}
+
+func mapLiteralToProto(l *expr.MapLiteral) *proto.Expression_Literal {
+	lit := &proto.Expression_Literal{
+		Nullable:               l.Type.GetNullability() == types.NullabilityNullable,
+		TypeVariationReference: l.Type.GetTypeVariationReference(),
+	}
+
+	if len(l.Value) == 0 {
+		lit.LiteralType = &proto.Expression_Literal_EmptyMap{
+			EmptyMap: TypeToProto(l.Type).GetMap(),
+		}
+	} else {
+		kv := make([]*proto.Expression_Literal_Map_KeyValue, len(l.Value))
+		for i, v := range l.Value {
+			kv[i] = &proto.Expression_Literal_Map_KeyValue{
+				Key:   LiteralToProto(v.Key),
+				Value: LiteralToProto(v.Value),
+			}
+		}
+		lit.LiteralType = &proto.Expression_Literal_Map_{
+			Map: &proto.Expression_Literal_Map{KeyValues: kv},
 		}
 	}
 

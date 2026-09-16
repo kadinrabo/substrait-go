@@ -258,39 +258,6 @@ func (t *MapLiteral) ValueString() string {
 	return fmt.Sprintf("%v", t.Value)
 }
 func (t *MapLiteral) GetType() types.Type { return t.Type }
-func (t *MapLiteral) ToProtoLiteral() *proto.Expression_Literal {
-	lit := &proto.Expression_Literal{
-		Nullable:               t.Type.GetNullability() == types.NullabilityNullable,
-		TypeVariationReference: t.Type.GetTypeVariationReference(),
-	}
-
-	if len(t.Value) == 0 {
-		lit.LiteralType = &proto.Expression_Literal_EmptyMap{
-			EmptyMap: types.TypeToProto(t.Type).GetMap(),
-		}
-	} else {
-		kv := make([]*proto.Expression_Literal_Map_KeyValue, len(t.Value))
-		for i, v := range t.Value {
-			kv[i] = &proto.Expression_Literal_Map_KeyValue{
-				Key:   v.Key.ToProtoLiteral(),
-				Value: v.Value.ToProtoLiteral(),
-			}
-		}
-
-		lit.LiteralType = &proto.Expression_Literal_Map_{
-			Map: &proto.Expression_Literal_Map{KeyValues: kv},
-		}
-	}
-
-	return lit
-}
-
-func (t *MapLiteral) ToProto() *proto.Expression {
-	return &proto.Expression{RexType: &proto.Expression_Literal_{
-		Literal: t.ToProtoLiteral(),
-	}}
-}
-
 func (t *MapLiteral) Equals(rhs Expression) bool {
 	if other, ok := rhs.(*MapLiteral); ok {
 		return t.Type.Equals(other.Type) && slices.EqualFunc(t.Value, other.Value,
