@@ -99,6 +99,8 @@ func TypeToProto(t types.Type) *proto.Type {
 			IntervalYear: &proto.Type_IntervalYear{
 				Nullability:            proto.Type_Nullability(t.Nullability),
 				TypeVariationReference: t.TypeVariationRef}}}
+	case types.IntervalCompoundType:
+		return intervalCompoundTypeToProto(t)
 	case *types.UUIDType:
 		return &proto.Type{Kind: &proto.Type_Uuid{
 			Uuid: &proto.Type_UUID{
