@@ -39,6 +39,8 @@ func ExprToProto(e expr.Expression) *proto.Expression {
 		return windowFunctionToProto(e)
 	case *expr.FieldReference:
 		return FieldReferenceToProto(e)
+	case *plan.ScalarSubquery:
+		return scalarSubqueryToProto(e)
 	case expr.Literal:
 		return &proto.Expression{
 			RexType: &proto.Expression_Literal_{Literal: LiteralToProto(e)},

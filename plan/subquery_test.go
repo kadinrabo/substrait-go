@@ -41,7 +41,7 @@ func TestScalarSubquery(t *testing.T) {
 	assert.True(t, expectedType.Equals(subquery.GetType()))
 
 	// Test protobuf conversion
-	proto := subquery.ToProto()
+	proto := wire.ExprToProto(subquery)
 	require.NotNil(t, proto)
 	require.NotNil(t, proto.GetSubquery())
 	require.NotNil(t, proto.GetSubquery().GetScalar())
@@ -62,7 +62,7 @@ func TestScalarSubqueryValidConstruction(t *testing.T) {
 	assert.Nil(t, nilSubquery.Input)
 
 	// Test protobuf conversion with valid relation
-	proto := validSubquery.ToProto()
+	proto := wire.ExprToProto(validSubquery)
 	require.NotNil(t, proto)
 	require.NotNil(t, proto.GetSubquery())
 	require.NotNil(t, proto.GetSubquery().GetScalar())

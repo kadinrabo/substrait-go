@@ -104,20 +104,6 @@ func (s *ScalarSubquery) GetType() types.Type {
 	return schemaTypes[0]
 }
 
-func (s *ScalarSubquery) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_Subquery_{
-			Subquery: &proto.Expression_Subquery{
-				SubqueryType: &proto.Expression_Subquery_Scalar_{
-					Scalar: &proto.Expression_Subquery_Scalar{
-						Input: s.Input.ToProto(),
-					},
-				},
-			},
-		},
-	}
-}
-
 func (s *ScalarSubquery) Equals(other expr.Expression) bool {
 	otherScalar, ok := other.(*ScalarSubquery)
 	if !ok {
