@@ -1147,23 +1147,6 @@ func (sr *SortRel) SetAdvancedExtension(advExtension *extensions.AdvancedExtensi
 	return existing
 }
 
-func (sr *SortRel) ToProto() *proto.Rel {
-	sorts := make([]*proto.SortField, len(sr.sorts))
-	for i, s := range sr.sorts {
-		sorts[i] = s.ToProto()
-	}
-	return &proto.Rel{
-		RelType: &proto.Rel_Sort{
-			Sort: &proto.SortRel{
-				Common:            sr.toProto(),
-				Input:             sr.input.ToProto(),
-				Sorts:             sorts,
-				AdvancedExtension: sr.advExtension,
-			},
-		},
-	}
-}
-
 func (sr *SortRel) ToProtoPlanRel() *proto.PlanRel {
 	return &proto.PlanRel{
 		RelType: &proto.PlanRel_Rel{

@@ -34,6 +34,8 @@ func RelToProto(rel plan.Rel) *proto.Rel {
 		return projectRelToProto(r)
 	case *plan.AggregateRel:
 		return aggregateRelToProto(r)
+	case *plan.SortRel:
+		return sortRelToProto(r)
 	default:
 		panic(fmt.Sprintf("wire: unhandled relation %T", rel))
 	}
@@ -264,4 +266,22 @@ func aggRelMeasureToProto(am *plan.AggRelMeasure) *proto.AggregateRel_Measure {
 		ret.Filter = ExprToProto(f)
 	}
 	return ret
+}
+
+func sortRelToProto(sr *plan.SortRel) *proto.Rel {
+	sorts := make([]*proto.SortField, len(sr.Sorts()))
+	for i := range sr.Sorts() {
+		s := sr.Sorts()[i]
+		sorts[i] = SortFieldToProto(&s)
+	}
+	return &proto.Rel{
+		RelType: &proto.Rel_Sort{
+			Sort: &proto.SortRel{
+				Common:            relCommonToProto(&sr.RelCommon),
+				Input:             RelToProto(sr.Input()),
+				Sorts:             sorts,
+				AdvancedExtension: sr.GetAdvancedExtension(),
+			},
+		},
+	}
 }
