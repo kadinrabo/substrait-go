@@ -144,3 +144,35 @@ func SortFieldToProto(s *expr.SortField) *proto.SortField {
 	}
 	return ret
 }
+
+// BoundToProto encodes a window-function bound as its protobuf message.
+func BoundToProto(b expr.Bound) *proto.Expression_WindowFunction_Bound {
+	switch b := b.(type) {
+	case expr.PrecedingBound:
+		return &proto.Expression_WindowFunction_Bound{
+			Kind: &proto.Expression_WindowFunction_Bound_Preceding_{
+				Preceding: &proto.Expression_WindowFunction_Bound_Preceding{Offset: int64(b)},
+			},
+		}
+	case expr.FollowingBound:
+		return &proto.Expression_WindowFunction_Bound{
+			Kind: &proto.Expression_WindowFunction_Bound_Following_{
+				Following: &proto.Expression_WindowFunction_Bound_Following{Offset: int64(b)},
+			},
+		}
+	case expr.CurrentRow:
+		return &proto.Expression_WindowFunction_Bound{
+			Kind: &proto.Expression_WindowFunction_Bound_CurrentRow_{
+				CurrentRow: &proto.Expression_WindowFunction_Bound_CurrentRow{},
+			},
+		}
+	case expr.Unbounded:
+		return &proto.Expression_WindowFunction_Bound{
+			Kind: &proto.Expression_WindowFunction_Bound_Unbounded_{
+				Unbounded: &proto.Expression_WindowFunction_Bound_Unbounded{},
+			},
+		}
+	default:
+		panic(fmt.Sprintf("wire: unhandled bound %T", b))
+	}
+}
