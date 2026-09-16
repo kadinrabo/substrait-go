@@ -130,6 +130,8 @@ func TypeToProto(t types.Type) *proto.Type {
 		return funcTypeToProto(t)
 	case *types.ListType:
 		return listTypeToProto(t)
+	case *types.MapType:
+		return mapTypeToProto(t)
 	}
 	panic("unimplemented type")
 }
@@ -173,4 +175,12 @@ func listTypeToProto(t *types.ListType) *proto.Type {
 		List: &proto.Type_List{Nullability: proto.Type_Nullability(t.Nullability),
 			Type:                   TypeToProto(t.Type),
 			TypeVariationReference: t.TypeVariationRef}}}
+}
+
+func mapTypeToProto(t *types.MapType) *proto.Type {
+	return &proto.Type{Kind: &proto.Type_Map_{
+		Map: &proto.Type_Map{Nullability: proto.Type_Nullability(t.Nullability),
+			TypeVariationReference: t.TypeVariationRef,
+			Key:                    TypeToProto(t.Key),
+			Value:                  TypeToProto(t.Value)}}}
 }

@@ -1505,14 +1505,6 @@ func (t *MapType) Equals(rhs Type) bool {
 	return false
 }
 
-func (t *MapType) ToProto() *proto.Type {
-	return &proto.Type{Kind: &proto.Type_Map_{
-		Map: &proto.Type_Map{Nullability: proto.Type_Nullability(t.Nullability),
-			TypeVariationReference: t.TypeVariationRef,
-			Key:                    TypeToProto(t.Key),
-			Value:                  TypeToProto(t.Value)}}}
-}
-
 func (t *MapType) ToProtoFuncArg() *proto.FunctionArgument {
 	return &proto.FunctionArgument{
 		ArgType: &proto.FunctionArgument_Type{Type: t.ToProto()},
