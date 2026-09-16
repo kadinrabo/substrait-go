@@ -298,20 +298,6 @@ type ExtensionTableReadRel struct {
 
 func (e *ExtensionTableReadRel) Detail() *anypb.Any { return e.detail }
 
-func (e *ExtensionTableReadRel) ToProto() *proto.Rel {
-	readRel := e.toReadRelProto()
-	readRel.ReadType = &proto.ReadRel_ExtensionTable_{
-		ExtensionTable: &proto.ReadRel_ExtensionTable{
-			Detail: e.detail,
-		},
-	}
-	return &proto.Rel{
-		RelType: &proto.Rel_Read{
-			Read: readRel,
-		},
-	}
-}
-
 func (e *ExtensionTableReadRel) ToProtoPlanRel() *proto.PlanRel {
 	return &proto.PlanRel{
 		RelType: &proto.PlanRel_Rel{

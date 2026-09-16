@@ -20,6 +20,8 @@ func RelToProto(rel plan.Rel) *proto.Rel {
 		return namedTableReadRelToProto(r)
 	case *plan.VirtualTableReadRel:
 		return virtualTableReadRelToProto(r)
+	case *plan.ExtensionTableReadRel:
+		return extensionTableReadRelToProto(r)
 	default:
 		panic(fmt.Sprintf("wire: unhandled relation %T", rel))
 	}
@@ -69,6 +71,14 @@ func virtualTableReadRelToProto(v *plan.VirtualTableReadRel) *proto.Rel {
 	}
 	readRel.ReadType = &proto.ReadRel_VirtualTable_{
 		VirtualTable: &proto.ReadRel_VirtualTable{Expressions: values},
+	}
+	return &proto.Rel{RelType: &proto.Rel_Read{Read: readRel}}
+}
+
+func extensionTableReadRelToProto(e *plan.ExtensionTableReadRel) *proto.Rel {
+	readRel := baseReadRelToProto(&e.RelCommon, e.GetAdvancedExtension(), e)
+	readRel.ReadType = &proto.ReadRel_ExtensionTable_{
+		ExtensionTable: &proto.ReadRel_ExtensionTable{Detail: e.Detail()},
 	}
 	return &proto.Rel{RelType: &proto.Rel_Read{Read: readRel}}
 }
