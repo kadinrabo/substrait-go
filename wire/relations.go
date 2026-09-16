@@ -28,6 +28,8 @@ func RelToProto(rel plan.Rel) *proto.Rel {
 		return localFileReadRelToProto(r)
 	case *plan.FilterRel:
 		return filterRelToProto(r)
+	case *plan.FetchRel:
+		return fetchRelToProto(r)
 	default:
 		panic(fmt.Sprintf("wire: unhandled relation %T", rel))
 	}
@@ -182,6 +184,20 @@ func filterRelToProto(fr *plan.FilterRel) *proto.Rel {
 				Input:             RelToProto(fr.Input()),
 				Condition:         ExprToProto(fr.Condition()),
 				AdvancedExtension: fr.GetAdvancedExtension(),
+			},
+		},
+	}
+}
+
+func fetchRelToProto(f *plan.FetchRel) *proto.Rel {
+	return &proto.Rel{
+		RelType: &proto.Rel_Fetch{
+			Fetch: &proto.FetchRel{
+				Common:            relCommonToProto(&f.RelCommon),
+				Input:             RelToProto(f.Input()),
+				OffsetMode:        &proto.FetchRel_Offset{Offset: f.Offset()},
+				CountMode:         &proto.FetchRel_Count{Count: f.Count()},
+				AdvancedExtension: f.GetAdvancedExtension(),
 			},
 		},
 	}
