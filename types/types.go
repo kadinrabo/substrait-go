@@ -1819,13 +1819,6 @@ func NewNamedStructFromProto(n *proto.NamedStruct) NamedStruct {
 	}
 }
 
-func (n NamedStruct) ToProto() *proto.NamedStruct {
-	return &proto.NamedStruct{
-		Names:  n.Names,
-		Struct: n.Struct.ToProto().GetStruct(),
-	}
-}
-
 func (n NamedStruct) String() string {
 	var b strings.Builder
 
