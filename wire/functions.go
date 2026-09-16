@@ -99,3 +99,34 @@ func windowFunctionToProto(w *expr.WindowFunction) *proto.Expression {
 		},
 	}
 }
+
+// AggregateFunctionToProto encodes an aggregate function as its protobuf message.
+func AggregateFunctionToProto(a *expr.AggregateFunction) *proto.AggregateFunction {
+	var (
+		args  []*proto.FunctionArgument
+		sorts []*proto.SortField
+	)
+	if a.NArgs() > 0 {
+		args = make([]*proto.FunctionArgument, a.NArgs())
+		for i := range args {
+			args[i] = FuncArgToProto(a.Arg(i))
+		}
+	}
+
+	if len(a.Sorts) > 0 {
+		sorts = make([]*proto.SortField, len(a.Sorts))
+		for i, s := range a.Sorts {
+			sorts[i] = SortFieldToProto(&s)
+		}
+	}
+
+	return &proto.AggregateFunction{
+		FunctionReference: a.FuncRef(),
+		Arguments:         args,
+		Options:           FunctionOptionsToProto(a.GetOptions()),
+		OutputType:        TypeToProto(a.GetType()),
+		Phase:             proto.AggregationPhase(a.Phase()),
+		Sorts:             sorts,
+		Invocation:        proto.AggregateFunction_AggregationInvocation(a.Invocation()),
+	}
+}
