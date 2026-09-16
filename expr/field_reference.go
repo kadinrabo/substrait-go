@@ -358,22 +358,6 @@ type MaskListSelect struct {
 	child     MaskSelect
 }
 
-func (m *MaskListSelect) ToProto() *proto.Expression_MaskExpression_Select {
-	selection := make([]*proto.Expression_MaskExpression_ListSelect_ListSelectItem, len(m.selection))
-	for i, s := range m.selection {
-		selection[i] = s.ToProto()
-	}
-
-	return &proto.Expression_MaskExpression_Select{
-		Type: &proto.Expression_MaskExpression_Select_List{
-			List: &proto.Expression_MaskExpression_ListSelect{
-				Selection: selection,
-				Child:     m.child.ToProto(),
-			},
-		},
-	}
-}
-
 func (m *MaskListSelect) Child() MaskSelect { return m.child }
 func (m *MaskListSelect) Selection() []MaskListSelectItem {
 	return slices.Clone(m.selection)

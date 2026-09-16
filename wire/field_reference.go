@@ -109,3 +109,19 @@ func maskStructItemToProto(m *expr.MaskStructItem) *proto.Expression_MaskExpress
 		Child: child,
 	}
 }
+
+func maskListSelectToProto(m *expr.MaskListSelect) *proto.Expression_MaskExpression_Select {
+	sel := m.Selection()
+	items := make([]*proto.Expression_MaskExpression_ListSelect_ListSelectItem, len(sel))
+	for i, s := range sel {
+		items[i] = maskListSelectItemToProto(s)
+	}
+	return &proto.Expression_MaskExpression_Select{
+		Type: &proto.Expression_MaskExpression_Select_List{
+			List: &proto.Expression_MaskExpression_ListSelect{
+				Selection: items,
+				Child:     maskSelectToProto(m.Child()),
+			},
+		},
+	}
+}
