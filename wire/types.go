@@ -124,6 +124,8 @@ func TypeToProto(t types.Type) *proto.Type {
 				TypeVariationReference: t.TypeVariationRef}}}
 	case *types.DecimalType:
 		return decimalTypeToProto(t)
+	case *types.StructType:
+		return structTypeToProto(t)
 	}
 	panic("unimplemented type")
 }
@@ -134,4 +136,16 @@ func decimalTypeToProto(s *types.DecimalType) *proto.Type {
 			Scale: s.Scale, Precision: s.Precision,
 			Nullability:            proto.Type_Nullability(s.Nullability),
 			TypeVariationReference: s.TypeVariationRef}}}
+}
+
+func structTypeToProto(t *types.StructType) *proto.Type {
+	children := make([]*proto.Type, len(t.Types))
+	for i, c := range t.Types {
+		children[i] = TypeToProto(c)
+	}
+
+	return &proto.Type{Kind: &proto.Type_Struct_{
+		Struct: &proto.Type_Struct{Types: children,
+			TypeVariationReference: t.TypeVariationRef,
+			Nullability:            proto.Type_Nullability(t.Nullability)}}}
 }

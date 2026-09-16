@@ -1266,18 +1266,6 @@ func (t *StructType) Equals(rhs Type) bool {
 	return false
 }
 
-func (t *StructType) ToProto() *proto.Type {
-	children := make([]*proto.Type, len(t.Types))
-	for i, c := range t.Types {
-		children[i] = TypeToProto(c)
-	}
-
-	return &proto.Type{Kind: &proto.Type_Struct_{
-		Struct: &proto.Type_Struct{Types: children,
-			TypeVariationReference: t.TypeVariationRef,
-			Nullability:            proto.Type_Nullability(t.Nullability)}}}
-}
-
 func (t *StructType) ToProtoFuncArg() *proto.FunctionArgument {
 	return &proto.FunctionArgument{
 		ArgType: &proto.FunctionArgument_Type{Type: t.ToProto()},
