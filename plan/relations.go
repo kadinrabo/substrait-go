@@ -842,19 +842,6 @@ func (c *CrossRel) SetAdvancedExtension(advExtension *extensions.AdvancedExtensi
 	return existing
 }
 
-func (c *CrossRel) ToProto() *proto.Rel {
-	return &proto.Rel{
-		RelType: &proto.Rel_Cross{
-			Cross: &proto.CrossRel{
-				Common:            c.toProto(),
-				Left:              c.left.ToProto(),
-				Right:             c.right.ToProto(),
-				AdvancedExtension: c.advExtension,
-			},
-		},
-	}
-}
-
 func (c *CrossRel) ToProtoPlanRel() *proto.PlanRel {
 	return &proto.PlanRel{
 		RelType: &proto.PlanRel_Rel{

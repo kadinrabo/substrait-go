@@ -38,6 +38,8 @@ func RelToProto(rel plan.Rel) *proto.Rel {
 		return sortRelToProto(r)
 	case *plan.SetRel:
 		return setRelToProto(r)
+	case *plan.CrossRel:
+		return crossRelToProto(r)
 	default:
 		panic(fmt.Sprintf("wire: unhandled relation %T", rel))
 	}
@@ -300,6 +302,19 @@ func setRelToProto(s *plan.SetRel) *proto.Rel {
 				Inputs:            inputs,
 				Op:                proto.SetRel_SetOp(s.Op()),
 				AdvancedExtension: s.GetAdvancedExtension(),
+			},
+		},
+	}
+}
+
+func crossRelToProto(c *plan.CrossRel) *proto.Rel {
+	return &proto.Rel{
+		RelType: &proto.Rel_Cross{
+			Cross: &proto.CrossRel{
+				Common:            relCommonToProto(&c.RelCommon),
+				Left:              RelToProto(c.Left()),
+				Right:             RelToProto(c.Right()),
+				AdvancedExtension: c.GetAdvancedExtension(),
 			},
 		},
 	}
