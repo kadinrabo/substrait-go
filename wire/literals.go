@@ -73,6 +73,8 @@ func LiteralToProto(l expr.Literal) *proto.Expression_Literal {
 		return protoLiteralToProto(l)
 	case expr.IntervalCompoundLiteral:
 		return intervalCompoundLiteralToProto(l)
+	case expr.IntervalYearToMonthLiteral:
+		return intervalYearToMonthLiteralToProto(l)
 	default:
 		panic(fmt.Sprintf("wire: unhandled literal %T", l))
 	}
