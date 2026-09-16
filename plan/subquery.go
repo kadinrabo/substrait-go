@@ -269,21 +269,6 @@ func (s *SetPredicateSubquery) GetType() types.Type {
 	return &types.BooleanType{Nullability: types.NullabilityRequired}
 }
 
-func (s *SetPredicateSubquery) ToProto() *proto.Expression {
-	return &proto.Expression{
-		RexType: &proto.Expression_Subquery_{
-			Subquery: &proto.Expression_Subquery{
-				SubqueryType: &proto.Expression_Subquery_SetPredicate_{
-					SetPredicate: &proto.Expression_Subquery_SetPredicate{
-						PredicateOp: proto.Expression_Subquery_SetPredicate_PredicateOp(s.Operation),
-						Tuples:      s.Tuples.ToProto(),
-					},
-				},
-			},
-		},
-	}
-}
-
 func (s *SetPredicateSubquery) Equals(other expr.Expression) bool {
 	otherSetPredicate, ok := other.(*SetPredicateSubquery)
 	if !ok {

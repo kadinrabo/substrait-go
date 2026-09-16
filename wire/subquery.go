@@ -40,3 +40,18 @@ func inPredicateSubqueryToProto(s *plan.InPredicateSubquery) *proto.Expression {
 		},
 	}
 }
+
+func setPredicateSubqueryToProto(s *plan.SetPredicateSubquery) *proto.Expression {
+	return &proto.Expression{
+		RexType: &proto.Expression_Subquery_{
+			Subquery: &proto.Expression_Subquery{
+				SubqueryType: &proto.Expression_Subquery_SetPredicate_{
+					SetPredicate: &proto.Expression_Subquery_SetPredicate{
+						PredicateOp: proto.Expression_Subquery_SetPredicate_PredicateOp(s.Operation),
+						Tuples:      RelToProto(s.Tuples),
+					},
+				},
+			},
+		},
+	}
+}

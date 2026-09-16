@@ -152,7 +152,7 @@ func TestSetPredicateSubquery(t *testing.T) {
 	assert.True(t, expectedType.Equals(subquery.GetType()))
 
 	// Test protobuf conversion
-	proto := subquery.ToProto()
+	proto := wire.ExprToProto(subquery)
 	require.NotNil(t, proto)
 	require.NotNil(t, proto.GetSubquery())
 	require.NotNil(t, proto.GetSubquery().GetSetPredicate())
@@ -197,7 +197,7 @@ func TestSetPredicateSubqueryValidConstruction(t *testing.T) {
 	assert.Nil(t, nilRelSubquery.Tuples)
 
 	// Test protobuf conversion with valid arguments
-	protoMsg := existsSubquery.ToProto()
+	protoMsg := wire.ExprToProto(existsSubquery)
 	require.NotNil(t, protoMsg)
 	require.NotNil(t, protoMsg.GetSubquery())
 	require.NotNil(t, protoMsg.GetSubquery().GetSetPredicate())
