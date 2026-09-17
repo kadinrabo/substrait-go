@@ -337,14 +337,6 @@ func (s *ScalarFunction) GetArgTypes() []types.Type {
 }
 
 func (s *ScalarFunction) GetType() types.Type { return s.outputType }
-
-func (s *ScalarFunction) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{
-			Value: s.ToProto(),
-		},
-	}
-}
 func (s *ScalarFunction) Equals(rhs Expression) bool {
 	other, ok := rhs.(*ScalarFunction)
 	if !ok {
@@ -607,14 +599,6 @@ func (w *WindowFunction) Equals(other Expression) bool {
 	}
 
 	return true
-}
-
-func (w *WindowFunction) ToProtoFuncArg() *proto.FunctionArgument {
-	return &proto.FunctionArgument{
-		ArgType: &proto.FunctionArgument_Value{
-			Value: w.ToProto(),
-		},
-	}
 }
 
 func (w *WindowFunction) Visit(visit VisitFunc) Expression {
