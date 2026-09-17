@@ -383,6 +383,7 @@ func (s *ScalarFunction) GetArgTypes() []types.Type {
 }
 
 func (s *ScalarFunction) GetType() types.Type { return s.outputType }
+
 func (s *ScalarFunction) ToProtoFuncArg() *proto.FunctionArgument {
 	return &proto.FunctionArgument{
 		ArgType: &proto.FunctionArgument_Value{
@@ -390,7 +391,6 @@ func (s *ScalarFunction) ToProtoFuncArg() *proto.FunctionArgument {
 		},
 	}
 }
-
 func (s *ScalarFunction) ToProto() *proto.Expression {
 	args := make([]*proto.FunctionArgument, len(s.args))
 	for i, a := range s.args {

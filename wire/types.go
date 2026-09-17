@@ -1,0 +1,108 @@
+// SPDX-License-Identifier: Apache-2.0
+
+package wire
+
+import (
+	"github.com/substrait-io/substrait-go/v9/types"
+	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
+)
+
+// TypeToProto constructs the protobuf message for the given type.
+func TypeToProto(t types.Type) *proto.Type {
+	switch t := t.(type) {
+	case *types.BooleanType:
+		return &proto.Type{Kind: &proto.Type_Bool{
+			Bool: &proto.Type_Boolean{
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.Int8Type:
+		return &proto.Type{Kind: &proto.Type_I8_{
+			I8: &proto.Type_I8{
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.Int16Type:
+		return &proto.Type{Kind: &proto.Type_I16_{
+			I16: &proto.Type_I16{
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.Int32Type:
+		return &proto.Type{Kind: &proto.Type_I32_{
+			I32: &proto.Type_I32{
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.Int64Type:
+		return &proto.Type{Kind: &proto.Type_I64_{
+			I64: &proto.Type_I64{
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.Float32Type:
+		return &proto.Type{Kind: &proto.Type_Fp32{
+			Fp32: &proto.Type_FP32{
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.Float64Type:
+		return &proto.Type{Kind: &proto.Type_Fp64{
+			Fp64: &proto.Type_FP64{
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.StringType:
+		return &proto.Type{Kind: &proto.Type_String_{
+			String_: &proto.Type_String{
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.BinaryType:
+		return &proto.Type{Kind: &proto.Type_Binary_{
+			Binary: &proto.Type_Binary{
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.DateType:
+		return &proto.Type{Kind: &proto.Type_Date_{
+			Date: &proto.Type_Date{
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.TimeType:
+		return &proto.Type{Kind: &proto.Type_Time_{
+			Time: &proto.Type_Time{
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.TimestampTzType:
+		return &proto.Type{Kind: &proto.Type_TimestampTz{
+			TimestampTz: &proto.Type_TimestampTZ{
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.TimestampType:
+		return &proto.Type{Kind: &proto.Type_Timestamp_{
+			Timestamp: &proto.Type_Timestamp{
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.IntervalYearType:
+		return &proto.Type{Kind: &proto.Type_IntervalYear_{
+			IntervalYear: &proto.Type_IntervalYear{
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.UUIDType:
+		return &proto.Type{Kind: &proto.Type_Uuid{
+			Uuid: &proto.Type_UUID{
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.FixedCharType:
+		return &proto.Type{Kind: &proto.Type_FixedChar_{
+			FixedChar: &proto.Type_FixedChar{
+				Length:                 t.Length,
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.VarCharType:
+		return &proto.Type{Kind: &proto.Type_Varchar{
+			Varchar: &proto.Type_VarChar{
+				Length:                 t.Length,
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	case *types.FixedBinaryType:
+		return &proto.Type{Kind: &proto.Type_FixedBinary_{
+			FixedBinary: &proto.Type_FixedBinary{
+				Length:                 t.Length,
+				Nullability:            proto.Type_Nullability(t.Nullability),
+				TypeVariationReference: t.TypeVariationRef}}}
+	}
+	panic("unimplemented type")
+}

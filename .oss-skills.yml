@@ -1,0 +1,48 @@
+# Substrait binding. Copy to a target repo clone as `.oss-skills.yml`, then fill the
+# TODO local paths (or run `oss-init` inside a clone to autofill them).
+# Overrides values.global.yml. Deep knowledge: DOMAIN_PLAYBOOK + STATE_DIR below.
+
+PROJECT_NAME: Substrait
+ORG: substrait-io
+
+# Three repos. Fill each `path` with your local clone location on this machine.
+REPO_MAP:
+  spec: { repo: substrait-io/substrait,      path: "TODO: /path/to/substrait" }
+  java: { repo: substrait-io/substrait-java, path: "TODO: /path/to/substrait-java" }
+  go:   { repo: substrait-io/substrait-go,   path: "/Users/kadinrabo/workspace/substrait-go" }
+
+# Runtime knowledge base (machine-specific, git-ignored). activate.sh seeds it from state-seed/.
+STATE_DIR: ~/.oss-state/substrait
+DOMAIN_PLAYBOOK: $OSS_SKILLS_HOME/playbooks/substrait.example.md
+
+# Review lens and roster (behavior model: DOMAIN_PLAYBOOK section 5).
+REVIEW_LENS: vbarua
+VOICE_LENS: "{{STATE_DIR}}/voice/vbarua-calibration.md"
+MAINTAINERS: [vbarua, benbellick, westonpace, yongchul, nielspardon, jacques-n, EpsilonPrime, bestbeforetoday]
+
+# Per-repo test commands.
+TEST_CMD:
+  go:   go test ./...
+  java: ./gradlew test
+  spec: PYENV_VERSION=3.13.2 python -m pytest tests/coverage/ tests/test_extensions.py -x -q
+
+LANGUAGES: "--include=*.go --include=*.java --include=*.proto --include=*.yaml --include=*.py --include=*.md --include=*.g4"
+ECOSYSTEM_REPOS: [apache/datafusion, duckdb/duckdb]
+MEETING_DOC_URL: "https://docs.google.com/document/d/1Afg93ojsVWdwo3rBO2Dtng8__RYqAy_zJMrnqhTQapc/export?format=txt"
+MEETING_DAYS: Monday/Tuesday
+
+# Substrait cadence (overrides global). Reference rates from 2026 contributor data;
+# ramp gradually from current toward the review lens's rate over 2-3 months.
+CADENCE_TARGETS: |
+  reference rates (spec repo): benbellick ~3 PRs/wk, nielspardon ~3.4 PRs/wk,
+    vbarua ~0.5 PRs/wk + ~7 comments/wk (PMC, mostly reviews);
+    kadinrabo current ~0.5 PRs/wk, ~1 comment/wk, 0 issue comments.
+  PRs authored: <=1/week (avg 0.5-0.75)
+  PR review comments: 2-4/week (ramp toward ~5/week)
+  issue comments: 1-2/week
+  new issues filed: 0-1/week (one every 2-3 weeks)
+  total touchpoints: 3-6/week; never 10+
+  per-author comments: <=2/day
+  nothing-today frequency: ~20% of days
+  quiet-day burst: 3+ unreviewed PRs; absence: 7 days silent vs trailing avg; rolling: vs 4-wk avg
+  post-spike cooldown: after a week >6 touchpoints, bias next week 50% toward nothing
