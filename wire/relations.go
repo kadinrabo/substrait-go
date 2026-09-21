@@ -336,3 +336,78 @@ func joinRelToProto(j *plan.JoinRel) *proto.Rel {
 	}
 	return &proto.Rel{RelType: &proto.Rel_Join{Join: outRel}}
 }
+
+func comparisonJoinKeysToProto(keys []*plan.ComparisonJoinKey) []*proto.ComparisonJoinKey {
+	out := make([]*proto.ComparisonJoinKey, len(keys))
+	for i, k := range keys {
+		out[i] = comparisonJoinKeyToProto(k)
+	}
+	return out
+}
+
+func comparisonJoinKeyToProto(k *plan.ComparisonJoinKey) *proto.ComparisonJoinKey {
+	return &proto.ComparisonJoinKey{
+		Left:       fieldReferenceRefToProto(k.Left()),
+		Right:      fieldReferenceRefToProto(k.Right()),
+		Comparison: joinKeyComparisonToProto(k.Comparison()),
+	}
+}
+
+func joinKeyComparisonToProto(c plan.JoinKeyComparison) *proto.ComparisonJoinKey_ComparisonType {
+	switch c := c.(type) {
+	case plan.SimpleComparison:
+		return simpleComparisonToProto(c)
+	case *plan.SimpleComparison:
+		return simpleComparisonToProto(*c)
+	case plan.CustomComparison:
+		return customComparisonToProto(c)
+	case *plan.CustomComparison:
+		return customComparisonToProto(*c)
+	}
+	return nil
+}
+
+func simpleComparisonToProto(c plan.SimpleComparison) *proto.ComparisonJoinKey_ComparisonType {
+	return &proto.ComparisonJoinKey_ComparisonType{
+		InnerType: &proto.ComparisonJoinKey_ComparisonType_Simple{
+			Simple: proto.ComparisonJoinKey_SimpleComparisonType(c.Type)},
+	}
+}
+
+func customComparisonToProto(c plan.CustomComparison) *proto.ComparisonJoinKey_ComparisonType {
+	return &proto.ComparisonJoinKey_ComparisonType{
+		InnerType: &proto.ComparisonJoinKey_ComparisonType_CustomFunctionReference{
+			CustomFunctionReference: c.FunctionReference},
+	}
+}
+
+// tryEqualityJoinKeysToLegacyProto returns the deprecated left_keys/right_keys
+// representation of the given join keys with ok=true, but only when every key
+// is a plain SIMPLE_COMPARISON_TYPE_EQ comparison. Those are the only joins the
+// deprecated fields can express; IS_NOT_DISTINCT_FROM, MIGHT_EQUAL and custom
+// comparisons have no legacy encoding and an old consumer would silently treat
+// them as equality, so for those it returns ok=false and the caller should emit
+// only the modern keys field.
+func tryEqualityJoinKeysToLegacyProto(keys []*plan.ComparisonJoinKey) (leftKeys, rightKeys []*proto.Expression_FieldReference, ok bool) {
+	for _, k := range keys {
+		switch simple := k.Comparison().(type) {
+		case plan.SimpleComparison:
+			if simple.Type != plan.SimpleComparisonTypeEq {
+				return nil, nil, false
+			}
+		case *plan.SimpleComparison:
+			if simple == nil || simple.Type != plan.SimpleComparisonTypeEq {
+				return nil, nil, false
+			}
+		default:
+			return nil, nil, false
+		}
+	}
+	leftKeys = make([]*proto.Expression_FieldReference, len(keys))
+	rightKeys = make([]*proto.Expression_FieldReference, len(keys))
+	for i, k := range keys {
+		leftKeys[i] = fieldReferenceRefToProto(k.Left())
+		rightKeys[i] = fieldReferenceRefToProto(k.Right())
+	}
+	return leftKeys, rightKeys, true
+}
