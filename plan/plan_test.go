@@ -1,4 +1,4 @@
-package plan
+package plan_test
 
 import (
 	"errors"
@@ -11,7 +11,9 @@ import (
 	substraitgo "github.com/substrait-io/substrait-go/v9"
 	"github.com/substrait-io/substrait-go/v9/expr"
 	"github.com/substrait-io/substrait-go/v9/extensions"
+	"github.com/substrait-io/substrait-go/v9/plan"
 	"github.com/substrait-io/substrait-go/v9/types"
+	"github.com/substrait-io/substrait-go/v9/wire"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 	extensionspb "github.com/substrait-io/substrait-protobuf/go/substraitpb/extensions"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -44,9 +46,9 @@ func TestRelFromProto(t *testing.T) {
 		t.Run(td.name, func(t *testing.T) {
 			rel := &proto.Rel{RelType: &proto.Rel_Read{Read: td.readType}}
 
-			outRel, err := RelFromProto(rel, registry)
+			outRel, err := plan.RelFromProto(rel, registry)
 			require.NoError(t, err)
-			gotRel := outRel.ToProto()
+			gotRel := wire.RelToProto(outRel)
 			gotReadRel, ok := gotRel.RelType.(*proto.Rel_Read)
 			require.True(t, ok)
 			gotVirtualTableReadRel, ok := gotReadRel.Read.ReadType.(*proto.ReadRel_VirtualTable_)
@@ -110,10 +112,10 @@ func TestPlanRoundTripWithExtensions(t *testing.T) {
 		Relations: []*proto.PlanRel{},
 	}
 
-	plan, err := FromProto(original, c)
+	p, err := plan.FromProto(original, c)
 	require.NoError(t, err)
 
-	roundTripped, err := plan.ToProto()
+	roundTripped, err := wire.PlanToProto(p)
 	require.NoError(t, err)
 
 	assert.True(t, protobuf.Equal(original, roundTripped),
@@ -138,7 +140,7 @@ func TestPlanRoundTripWithSubqueries(t *testing.T) {
 			},
 		},
 	}
-	needle := expr.NewPrimitiveLiteral(int32(1), false).ToProto()
+	needle := wire.ExprToProto(expr.NewPrimitiveLiteral(int32(1), false))
 
 	tests := []struct {
 		name     string
@@ -210,9 +212,9 @@ func TestPlanRoundTripWithSubqueries(t *testing.T) {
 					},
 				}},
 			}
-			p, err := FromProto(original, c)
+			p, err := plan.FromProto(original, c)
 			require.NoError(t, err)
-			roundTripped, err := p.ToProto()
+			roundTripped, err := wire.PlanToProto(p)
 			require.NoError(t, err)
 			// Use cmp.Diff instead of protojson for comparison: protojson output is non-deterministic.
 			if diff := cmp.Diff(original, roundTripped, protocmp.Transform()); diff != "" {
@@ -223,7 +225,7 @@ func TestPlanRoundTripWithSubqueries(t *testing.T) {
 }
 
 func TestRejectsMismatchedRootNames(t *testing.T) {
-	b := NewBuilderDefault()
+	b := plan.NewBuilderDefault()
 	scan := b.NamedScan([]string{"test"}, types.NamedStruct{
 		Names: []string{"a", "b"},
 		Struct: types.StructType{
@@ -253,7 +255,7 @@ func TestFromProtoWithSubqueries(t *testing.T) {
 			},
 		},
 	}
-	needle := expr.NewPrimitiveLiteral(int32(1), false).ToProto()
+	needle := wire.ExprToProto(expr.NewPrimitiveLiteral(int32(1), false))
 	tests := []struct {
 		name     string
 		subquery *proto.Expression_Subquery
@@ -324,7 +326,7 @@ func TestFromProtoWithSubqueries(t *testing.T) {
 					},
 				}},
 			}
-			result, err := FromProto(p, c)
+			result, err := plan.FromProto(p, c)
 			require.NoError(t, err)
 			require.NotNil(t, result)
 		})
@@ -332,7 +334,7 @@ func TestFromProtoWithSubqueries(t *testing.T) {
 }
 
 func TestBuilderPlanRegistryWithSubqueries(t *testing.T) {
-	b := NewBuilderDefault()
+	b := plan.NewBuilderDefault()
 	scan := b.NamedScan([]string{"t"}, types.NamedStruct{
 		Names:  []string{"col1"},
 		Struct: types.StructType{Types: []types.Type{&types.Int32Type{}}},
@@ -421,11 +423,11 @@ func TestFromProtoRightSemiJoinRootNames(t *testing.T) {
 	require.NoError(t, protojson.Unmarshal([]byte(planJSON), &p))
 
 	c := extensions.GetDefaultCollectionWithNoError()
-	_, err := FromProto(&p, c)
+	_, err := plan.FromProto(&p, c)
 	require.NoError(t, err)
 }
 
-// TestFromProtoWithDecoder is a full-plan integration test for FromProtoWithDecoder.
+// TestFromProtoWithDecoder is a full-plan integration test for plan.FromProtoWithDecoder.
 // It verifies decoder wiring and round-trip fidelity for all three extension rel types.
 // Relation-level decoder error cases are covered by TestExtensionRelDecoder below.
 func TestFromProtoWithDecoder(t *testing.T) {
@@ -485,11 +487,11 @@ func TestFromProtoWithDecoder(t *testing.T) {
 
 	for _, tc := range successCases {
 		t.Run(tc.name, func(t *testing.T) {
-			p, err := FromProtoWithDecoder(tc.plan, c, map[string]expr.ExtensionRelDecoder{typeURL: &customDecoder{schema: extSchema}})
+			p, err := plan.FromProtoWithDecoder(tc.plan, c, map[string]expr.ExtensionRelDecoder{typeURL: &customDecoder{schema: extSchema}})
 			require.NoError(t, err)
 			require.Len(t, p.Relations()[0].Root().RecordType().Struct.Types, 3)
 
-			roundTripped, err := p.ToProto()
+			roundTripped, err := wire.PlanToProto(p)
 			require.NoError(t, err)
 			if diff := cmp.Diff(tc.plan, roundTripped, protocmp.Transform()); diff != "" {
 				t.Errorf("round-trip mismatch (-want +got):\n%s", diff)
@@ -498,29 +500,13 @@ func TestFromProtoWithDecoder(t *testing.T) {
 	}
 
 	t.Run("decoder error propagates", func(t *testing.T) {
-		plan := makePlan(&proto.Rel{RelType: &proto.Rel_ExtensionSingle{ExtensionSingle: &proto.ExtensionSingleRel{
+		pl := makePlan(&proto.Rel{RelType: &proto.Rel_ExtensionSingle{ExtensionSingle: &proto.ExtensionSingleRel{
 			Common: direct, Input: oneColInput, Detail: detail,
 		}}})
-		_, err := FromProtoWithDecoder(plan, c, map[string]expr.ExtensionRelDecoder{typeURL: &errorDecoder{err: errors.New("decode failed")}})
+		_, err := plan.FromProtoWithDecoder(pl, c, map[string]expr.ExtensionRelDecoder{typeURL: &errorDecoder{err: errors.New("decode failed")}})
 		require.ErrorContains(t, err, "decode failed")
 	})
 
-}
-
-func TestIsRecordTypeSupported(t *testing.T) {
-	fixedSchema := *types.NewRecordTypeFromTypes([]types.Type{
-		&types.Int64Type{Nullability: types.NullabilityRequired},
-	})
-	decoded := &customExtDef{schema: fixedSchema}
-	undecoded := &UndecodedExtension{}
-
-	assert.True(t, isRecordTypeSupported(&ExtensionSingleRel{definition: decoded}))
-	assert.True(t, isRecordTypeSupported(&ExtensionLeafRel{definition: decoded}))
-	assert.True(t, isRecordTypeSupported(&ExtensionMultiRel{definition: decoded}))
-
-	assert.False(t, isRecordTypeSupported(&ExtensionSingleRel{definition: undecoded}))
-	assert.False(t, isRecordTypeSupported(&ExtensionLeafRel{definition: undecoded}))
-	assert.False(t, isRecordTypeSupported(&ExtensionMultiRel{definition: undecoded}))
 }
 
 // customExtDef is a test ExtensionRelDefinition that claims a fixed output schema.
@@ -529,9 +515,9 @@ type customExtDef struct {
 	schema types.RecordType
 }
 
-func (d *customExtDef) Schema(inputs []Rel) types.RecordType  { return d.schema }
-func (d *customExtDef) Build(_ []Rel) *anypb.Any              { return d.detail }
-func (d *customExtDef) Expressions(_ []Rel) []expr.Expression { return nil }
+func (d *customExtDef) Schema(inputs []plan.Rel) types.RecordType  { return d.schema }
+func (d *customExtDef) Build(_ []plan.Rel) *anypb.Any              { return d.detail }
+func (d *customExtDef) Expressions(_ []plan.Rel) []expr.Expression { return nil }
 
 // customDecoder returns a customExtDef with a fixed schema. The registry dispatches
 // to it only for the type URL it was registered under.
@@ -643,19 +629,19 @@ func TestExtensionRelDecoder(t *testing.T) {
 				t.Run("without decoder panics on emit OOB", func(t *testing.T) {
 					reg := expr.NewEmptyExtensionRegistry(extensions.GetDefaultCollectionWithNoError())
 					require.Panics(t, func() {
-						out, err := RelFromProto(tc.rel, reg)
+						out, err := plan.RelFromProto(tc.rel, reg)
 						require.NoError(t, err)
 						_ = out.RecordType()
 					})
 				})
 
 				// Registering a decoder under a different type URL leaves this detail
-				// unmatched, so RelFromProto falls back to UndecodedExtension and panics on OOB.
+				// unmatched, so plan.RelFromProto falls back to UndecodedExtension and panics on OOB.
 				t.Run("decoder registered under different typeURL falls back to UndecodedExtension", func(t *testing.T) {
 					reg := expr.NewEmptyExtensionRegistry(extensions.GetDefaultCollectionWithNoError())
 					require.NoError(t, reg.SetExtensionRelDecoder("type.googleapis.com/other.Type", &customDecoder{schema: extSchema}))
 					require.Panics(t, func() {
-						out, err := RelFromProto(tc.rel, reg)
+						out, err := plan.RelFromProto(tc.rel, reg)
 						require.NoError(t, err)
 						_ = out.RecordType()
 					})
@@ -666,16 +652,16 @@ func TestExtensionRelDecoder(t *testing.T) {
 			t.Run("with decoder uses custom schema", func(t *testing.T) {
 				reg := expr.NewEmptyExtensionRegistry(extensions.GetDefaultCollectionWithNoError())
 				require.NoError(t, reg.SetExtensionRelDecoder(typeURL, &customDecoder{schema: extSchema}))
-				out, err := RelFromProto(tc.rel, reg)
+				out, err := plan.RelFromProto(tc.rel, reg)
 				require.NoError(t, err)
 				require.Equal(t, int32(3), out.RecordType().FieldCount())
 			})
 
-			// A decoder error is propagated directly to the RelFromProto caller.
-			t.Run("decoder returning error propagates to RelFromProto", func(t *testing.T) {
+			// A decoder error is propagated directly to the plan.RelFromProto caller.
+			t.Run("decoder returning error propagates to plan.RelFromProto", func(t *testing.T) {
 				reg := expr.NewEmptyExtensionRegistry(extensions.GetDefaultCollectionWithNoError())
 				require.NoError(t, reg.SetExtensionRelDecoder(typeURL, &errorDecoder{err: errors.New("decode failed")}))
-				_, err := RelFromProto(tc.rel, reg)
+				_, err := plan.RelFromProto(tc.rel, reg)
 				require.ErrorContains(t, err, "decode failed")
 			})
 
@@ -684,7 +670,7 @@ func TestExtensionRelDecoder(t *testing.T) {
 			t.Run("DecodeExtensionRel returns the wrong type errors", func(t *testing.T) {
 				reg := expr.NewEmptyExtensionRegistry(extensions.GetDefaultCollectionWithNoError())
 				require.NoError(t, reg.SetExtensionRelDecoder(typeURL, &wrongTypeDecoder{}))
-				_, err := RelFromProto(tc.rel, reg)
+				_, err := plan.RelFromProto(tc.rel, reg)
 				require.ErrorContains(t, err, "does not implement ExtensionRelDefinition")
 			})
 		})
