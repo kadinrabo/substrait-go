@@ -183,21 +183,3 @@ func (rc *RelCommon) SetAdvancedExtension(advExtension *extensions.AdvancedExten
 func (rc *RelCommon) Hint() *Hint {
 	return rc.hint
 }
-
-func (rc *RelCommon) toProto() *proto.RelCommon {
-	ret := &proto.RelCommon{
-		Hint:              rc.hint,
-		AdvancedExtension: rc.advExtension,
-	}
-
-	if rc.mapping == nil {
-		ret.EmitKind = &proto.RelCommon_Direct_{
-			Direct: &proto.RelCommon_Direct{},
-		}
-	} else {
-		ret.EmitKind = &proto.RelCommon_Emit_{
-			Emit: &proto.RelCommon_Emit{OutputMapping: rc.mapping},
-		}
-	}
-	return ret
-}
