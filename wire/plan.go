@@ -39,3 +39,27 @@ func PlanToProto(p *plan.Plan) (*proto.Plan, error) {
 		ParameterBindings:  bindings,
 	}, nil
 }
+
+func relationToProto(r *plan.Relation) *proto.PlanRel {
+	if r.IsRoot() {
+		return rootToProto(r.Root())
+	}
+	return relToPlanRelProto(r.Rel())
+}
+
+func rootToProto(root *plan.Root) *proto.PlanRel {
+	return &proto.PlanRel{
+		RelType: &proto.PlanRel_Root{
+			Root: &proto.RelRoot{
+				Input: RelToProto(root.Input()),
+				Names: root.Names(),
+			},
+		},
+	}
+}
+
+func relToPlanRelProto(rel plan.Rel) *proto.PlanRel {
+	return &proto.PlanRel{
+		RelType: &proto.PlanRel_Rel{Rel: RelToProto(rel)},
+	}
+}

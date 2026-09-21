@@ -127,14 +127,6 @@ func (r *Relation) IsRoot() bool {
 func (r *Relation) Root() *Root { return r.root }
 func (r *Relation) Rel() Rel    { return r.rel }
 
-func (r *Relation) ToProto() *proto.PlanRel {
-	if r.IsRoot() {
-		return r.root.ToProtoPlanRel()
-	}
-
-	return r.rel.ToProtoPlanRel()
-}
-
 type AdvancedExtension interface {
 	GetEnhancement() *anypb.Any
 	GetOptimization() []*anypb.Any
@@ -312,17 +304,6 @@ func (r *Root) Input() Rel { return r.input }
 // Names are the field names in depth-first order.
 func (r *Root) Names() []string { return r.names }
 
-func (r *Root) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Root{
-			Root: &proto.RelRoot{
-				Input: r.input.ToProto(),
-				Names: r.names,
-			},
-		},
-	}
-}
-
 func (r *Root) RecordType() types.NamedStruct {
 	return types.NamedStruct{
 		Names:  r.names,
@@ -385,9 +366,6 @@ type Rel interface {
 	GetAdvancedExtension() *extensions.AdvancedExtension
 	// SetAdvancedExtension sets an AdvancedExtension on this Rel, returning any existing one on this Rel. Use `nil` to remove any existing AdvancedExtension.
 	SetAdvancedExtension(extension *extensions.AdvancedExtension) (existing *extensions.AdvancedExtension)
-
-	ToProto() *proto.Rel
-	ToProtoPlanRel() *proto.PlanRel
 
 	// Copy creates a copy of this relation with new inputs
 	Copy(newInputs ...Rel) (Rel, error)

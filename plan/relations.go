@@ -201,14 +201,6 @@ func (n *NamedTableReadRel) RecordType() types.RecordType {
 	return n.remap(n.directOutputSchema())
 }
 
-func (n *NamedTableReadRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: n.ToProto(),
-		},
-	}
-}
-
 func (n *NamedTableReadRel) Copy(_ ...Rel) (Rel, error) {
 	return n, nil
 }
@@ -239,14 +231,6 @@ type VirtualTableReadRel struct {
 
 func (v *VirtualTableReadRel) Values() []expr.VirtualTableExpressionValue {
 	return v.values
-}
-
-func (v *VirtualTableReadRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: v.ToProto(),
-		},
-	}
 }
 
 func (v *VirtualTableReadRel) Copy(_ ...Rel) (Rel, error) {
@@ -297,14 +281,6 @@ type ExtensionTableReadRel struct {
 }
 
 func (e *ExtensionTableReadRel) Detail() *anypb.Any { return e.detail }
-
-func (e *ExtensionTableReadRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: e.ToProto(),
-		},
-	}
-}
 
 func (e *ExtensionTableReadRel) Copy(_ ...Rel) (Rel, error) {
 	return e, nil
@@ -369,14 +345,6 @@ func (n *IcebergTableReadRel) TableType() IcebergTableType { return n.tableType 
 
 func (n *IcebergTableReadRel) RecordType() types.RecordType {
 	return n.remap(n.directOutputSchema())
-}
-
-func (n *IcebergTableReadRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: n.ToProto(),
-		},
-	}
 }
 
 func (n *IcebergTableReadRel) Copy(_ ...Rel) (Rel, error) {
@@ -510,14 +478,6 @@ func (lf *LocalFileReadRel) SetAdvancedExtension(advExtension *extensions.Advanc
 	return existing
 }
 
-func (lf *LocalFileReadRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: lf.ToProto(),
-		},
-	}
-}
-
 func (lf *LocalFileReadRel) Copy(_ ...Rel) (Rel, error) {
 	return lf, nil
 }
@@ -572,14 +532,6 @@ func (p *ProjectRel) SetAdvancedExtension(advExtension *extensions.AdvancedExten
 	existing := p.advExtension
 	p.advExtension = advExtension
 	return existing
-}
-
-func (p *ProjectRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: p.ToProto(),
-		},
-	}
 }
 
 func (p *ProjectRel) GetInputs() []Rel {
@@ -751,14 +703,6 @@ func (j *JoinRel) SetAdvancedExtension(advExtension *extensions.AdvancedExtensio
 	return existing
 }
 
-func (j *JoinRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: j.ToProto(),
-		},
-	}
-}
-
 func (j *JoinRel) GetInputs() []Rel {
 	return []Rel{j.left, j.right}
 }
@@ -822,14 +766,6 @@ func (c *CrossRel) SetAdvancedExtension(advExtension *extensions.AdvancedExtensi
 	return existing
 }
 
-func (c *CrossRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: c.ToProto(),
-		},
-	}
-}
-
 func (c *CrossRel) GetInputs() []Rel {
 	return []Rel{c.left, c.right}
 }
@@ -878,14 +814,6 @@ func (f *FetchRel) SetAdvancedExtension(advExtension *extensions.AdvancedExtensi
 	existing := f.advExtension
 	f.advExtension = advExtension
 	return existing
-}
-
-func (f *FetchRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: f.ToProto(),
-		},
-	}
 }
 
 func (f *FetchRel) GetInputs() []Rel {
@@ -973,14 +901,6 @@ func (ar *AggregateRel) SetAdvancedExtension(advExtension *extensions.AdvancedEx
 	existing := ar.advExtension
 	ar.advExtension = advExtension
 	return existing
-}
-
-func (ar *AggregateRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: ar.ToProto(),
-		},
-	}
 }
 
 func (ar *AggregateRel) GetInputs() []Rel {
@@ -1114,14 +1034,6 @@ func (sr *SortRel) SetAdvancedExtension(advExtension *extensions.AdvancedExtensi
 	return existing
 }
 
-func (sr *SortRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: sr.ToProto(),
-		},
-	}
-}
-
 func (sr *SortRel) GetInputs() []Rel {
 	return []Rel{sr.input}
 }
@@ -1185,14 +1097,6 @@ func (fr *FilterRel) SetAdvancedExtension(advExtension *extensions.AdvancedExten
 	existing := fr.advExtension
 	fr.advExtension = advExtension
 	return existing
-}
-
-func (fr *FilterRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: fr.ToProto(),
-		},
-	}
 }
 
 func (fr *FilterRel) GetInputs() []Rel {
@@ -1294,14 +1198,6 @@ func (s *SetRel) SetAdvancedExtension(advExtension *extensions.AdvancedExtension
 	return existing
 }
 
-func (s *SetRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: s.ToProto(),
-		},
-	}
-}
-
 func (s *SetRel) GetInputs() []Rel {
 	return s.inputs
 }
@@ -1393,14 +1289,6 @@ func (es *ExtensionSingleRel) Detail() *anypb.Any {
 // Definition returns the extension definition if present.
 func (es *ExtensionSingleRel) Definition() ExtensionRelDefinition { return es.definition }
 
-func (es *ExtensionSingleRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: es.ToProto(),
-		},
-	}
-}
-
 func (es *ExtensionSingleRel) GetInputs() []Rel {
 	return []Rel{es.input}
 }
@@ -1447,14 +1335,6 @@ func (el *ExtensionLeafRel) Detail() *anypb.Any {
 // Definition returns the extension definition if present.
 func (el *ExtensionLeafRel) Definition() ExtensionRelDefinition { return el.definition }
 
-func (el *ExtensionLeafRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: el.ToProto(),
-		},
-	}
-}
-
 func (el *ExtensionLeafRel) GetInputs() []Rel {
 	return []Rel{}
 }
@@ -1494,14 +1374,6 @@ func (em *ExtensionMultiRel) Detail() *anypb.Any {
 
 // Definition returns the extension definition if present.
 func (em *ExtensionMultiRel) Definition() ExtensionRelDefinition { return em.definition }
-
-func (em *ExtensionMultiRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: em.ToProto(),
-		},
-	}
-}
 
 func (em *ExtensionMultiRel) GetInputs() []Rel {
 	return em.inputs
@@ -1739,14 +1611,6 @@ func (hr *HashJoinRel) SetAdvancedExtension(advExtension *extensions.AdvancedExt
 	return existing
 }
 
-func (hr *HashJoinRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: hr.ToProto(),
-		},
-	}
-}
-
 func (hr *HashJoinRel) GetInputs() []Rel {
 	return []Rel{hr.left, hr.right}
 }
@@ -1830,14 +1694,6 @@ func (mr *MergeJoinRel) SetAdvancedExtension(advExtension *extensions.AdvancedEx
 	existing := mr.advExtension
 	mr.advExtension = advExtension
 	return existing
-}
-
-func (mr *MergeJoinRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: mr.ToProto(),
-		},
-	}
 }
 
 func (mr *MergeJoinRel) GetInputs() []Rel {
@@ -1970,14 +1826,6 @@ func (wr *NamedTableWriteRel) Op() WriteOp { return wr.op }
 func (wr *NamedTableWriteRel) Input() Rel  { return wr.input }
 func (wr *NamedTableWriteRel) OutputMode() OutputMode {
 	return wr.outputMode
-}
-
-func (wr *NamedTableWriteRel) ToProtoPlanRel() *proto.PlanRel {
-	return &proto.PlanRel{
-		RelType: &proto.PlanRel_Rel{
-			Rel: wr.ToProto(),
-		},
-	}
 }
 
 func (wr *NamedTableWriteRel) GetInputs() []Rel {
