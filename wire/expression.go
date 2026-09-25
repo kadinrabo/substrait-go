@@ -8,6 +8,7 @@ import (
 	substraitgo "github.com/substrait-io/substrait-go/v9"
 	"github.com/substrait-io/substrait-go/v9/expr"
 	"github.com/substrait-io/substrait-go/v9/extensions"
+	"github.com/substrait-io/substrait-go/v9/plan"
 	"github.com/substrait-io/substrait-go/v9/types"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 )
@@ -41,6 +42,14 @@ func ExprToProto(e expr.Expression) *proto.Expression {
 		return windowFunctionToProto(e)
 	case *expr.FieldReference:
 		return FieldReferenceToProto(e)
+	case *plan.ScalarSubquery:
+		return scalarSubqueryToProto(e)
+	case *plan.InPredicateSubquery:
+		return inPredicateSubqueryToProto(e)
+	case *plan.SetPredicateSubquery:
+		return setPredicateSubqueryToProto(e)
+	case *plan.SetComparisonSubquery:
+		return setComparisonSubqueryToProto(e)
 	case expr.Literal:
 		return &proto.Expression{
 			RexType: &proto.Expression_Literal_{Literal: LiteralToProto(e)},
@@ -381,6 +390,8 @@ func ExprFromProto(e *proto.Expression, baseSchema *types.RecordType, reg expr.E
 		), nil
 	case *proto.Expression_Enum_:
 		return nil, fmt.Errorf("%w: deprecated", substraitgo.ErrNotImplemented)
+	case *proto.Expression_Subquery_:
+		return subqueryFromProto(et.Subquery, baseSchema, reg)
 	case *proto.Expression_Cast_:
 		if et.Cast.Type == nil {
 			return nil, fmt.Errorf("%w: cast expression missing type", substraitgo.ErrInvalidExpr)
