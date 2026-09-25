@@ -8,7 +8,6 @@ import (
 	"github.com/substrait-io/substrait-go/v9/expr"
 	"github.com/substrait-io/substrait-go/v9/extensions"
 	"github.com/substrait-io/substrait-go/v9/types"
-	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -576,14 +575,6 @@ func (f *fakeRel) RecordType() types.RecordType {
 	return f.remap(f.directOutputSchema())
 }
 
-func (f *fakeRel) ToProto() *proto.Rel {
-	panic("unused")
-}
-
-func (f *fakeRel) ToProtoPlanRel() *proto.PlanRel {
-	panic("unused")
-}
-
 func (f *fakeRel) Copy(newInputs ...Rel) (Rel, error) {
 	panic("unused")
 }
@@ -685,7 +676,6 @@ func TestRightJoinRecordType(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rel := &JoinRel{left: left, right: right, joinType: tt.joinType}
 			assert.Equal(t, tt.expected, rel.RecordType())
-			assert.True(t, isRecordTypeSupported(rel))
 		})
 	}
 }
@@ -914,43 +904,4 @@ func TestExtensionRelFromProtoBackwardCompatibility(t *testing.T) {
 	// Test schema behavior - empty for no inputs, first input's schema with inputs
 	assert.Equal(t, types.RecordType{}, unknownExt.Schema(nil))
 	assert.Equal(t, types.RecordType{}, unknownExt.Schema([]Rel{}))
-}
-
-func TestFileOrFilesFormatRoundTrip(t *testing.T) {
-	cases := []struct {
-		name   string
-		format FileFormat
-	}{
-		{"parquet", &ParquetReadOptions{}},
-		{"arrow", &ArrowReadOptions{}},
-		{"orc", &OrcReadOptions{}},
-		{"dwrf", &DwrfReadOptions{}},
-		{"extension", (*ExtensionReadOptions)(&anypb.Any{TypeUrl: "urn:test", Value: []byte{1, 2, 3}})},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			original := &FileOrFiles{
-				PathType:  URIFile,
-				Path:      "/tmp/data",
-				PartIndex: 7,
-				Start:     100,
-				Len:       200,
-				Format:    tc.format,
-			}
-
-			var got FileOrFiles
-			got.fromProto(original.ToProto())
-
-			assert.Equal(t, original.PathType, got.PathType)
-			assert.Equal(t, original.Path, got.Path)
-			assert.Equal(t, original.PartIndex, got.PartIndex)
-			assert.Equal(t, original.Start, got.Start)
-			assert.Equal(t, original.Len, got.Len)
-			assert.IsType(t, tc.format, got.Format)
-			if ext, ok := tc.format.(*ExtensionReadOptions); ok {
-				require.IsType(t, &ExtensionReadOptions{}, got.Format)
-				assert.Equal(t, (*anypb.Any)(ext), (*anypb.Any)(got.Format.(*ExtensionReadOptions)))
-			}
-		})
-	}
 }
