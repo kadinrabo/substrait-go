@@ -34,34 +34,41 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-      - name: substrait-protobuf must stay in wire/
+      - name: substrait-protobuf must stay in codec/
         # Core domain packages must not reach substrait-protobuf, directly or
         # transitively, so a consumer that only builds and inspects plans does
         # not pull the generated types into its dependency graph. All encode and
-        # decode lives in wire/ (issue #280).
+        # decode lives in the codec module (issue #280).
         run: |
           set -euo pipefail
+          # a committed go.work adds codec (which holds the proto) to the
+          # workspace; check the core module as a consumer sees it
+          export GOWORK=off
           proto='github.com/substrait-io/substrait-protobuf'
-          non_wire=$(go list ./... | grep -v '/wire')
           fail=0
-          if go list -deps $non_wire 2>/dev/null | grep -q "$proto"; then
-            echo "substrait-protobuf reachable from a non-wire package:"
-            for pkg in $non_wire; do
+          if go mod graph | grep -q "$proto"; then
+            echo "substrait-protobuf is in the core module graph:"
+            go mod graph | grep "$proto" | sed 's/^/  /'
+            fail=1
+          fi
+          if go list -deps ./... 2>/dev/null | grep -q "$proto"; then
+            echo "substrait-protobuf reachable from a core package:"
+            for pkg in $(go list ./...); do
               go list -deps "$pkg" 2>/dev/null | grep -q "$proto" && echo "  $pkg"
             done
             fail=1
           fi
-          if leaks=$(git grep -l "$proto" -- '*.go' ':(exclude)wire/' ':(exclude)codec/'); then
-            echo "substrait-protobuf referenced in source outside wire/:"
+          if leaks=$(git grep -l "$proto" -- '*.go' ':(exclude)codec/'); then
+            echo "substrait-protobuf referenced in source outside codec/:"
             echo "$leaks" | sed 's/^/  /'
             fail=1
           fi
           if [ "$fail" -ne 0 ]; then
             echo
-            echo "substrait-protobuf must live only in wire/ (issue #280)."
+            echo "substrait-protobuf must live only in the codec module (issue #280)."
             exit 1
           fi
-          echo "OK: substrait-protobuf is isolated to wire/"
+          echo "OK: substrait-protobuf is isolated to the codec module"
   build:
     name: Build and Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
