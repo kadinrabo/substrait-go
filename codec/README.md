@@ -10,47 +10,41 @@ imports this module on purpose. See issue #280.
 
 ## Install
 
-    go get github.com/substrait-io/substrait-go/codec
+    go get github.com/substrait-io/substrait-go/codec/v9
 
-codec depends on the core module (`github.com/substrait-io/substrait-go/v9`), so
-`go get` pulls that in too.
+```go
+import (
+    "github.com/substrait-io/substrait-go/v9/plan"
+    "github.com/substrait-io/substrait-go/codec/v9" // package codec
+)
+```
+
+codec is versioned in lockstep with core: codec `v9.x.y` requires core `v9.x.y`
+exactly, so matching versions always work together. A core major bump moves
+codec to the same major.
 
 ## Local development
 
-The repo commits a `go.work` tying the core and codec modules together, so a
-checkout builds codec against the local core instead of a published release. From
-the repo root or from `codec/`:
+`codec/go.mod` carries `replace github.com/substrait-io/substrait-go/v9 => ../`,
+so a checkout builds codec against the core in this repo:
 
+    cd codec
     go build ./...
     go test ./...
 
-No `replace` directive is needed, and the committed `codec/go.mod` stays
-release-shaped.
+Consumers ignore replace directives in their dependencies, so it never reaches
+them. On main the core `require` may lag behind; only the release commit has to
+be exact.
 
 ## Releasing
 
-codec depends on the core module in the same repo, so they release in order:
+Automatic. When the release workflow tags core `vX.Y.Z`, it runs
+`scripts/release-codec.sh vX.Y.Z`, which on a detached HEAD at that tag:
 
-1. Release core (the root module) the usual way. That tags `v9.x.y`.
-2. Point codec at that release and commit the result:
+1. pins codec's core `require` to `vX.Y.Z`,
+2. builds and tests a copy with the replace dropped, resolving core from the tag
+   the way a consumer does,
+3. commits and tags `codec/vX.Y.Z`.
 
-       cd codec
-       go get github.com/substrait-io/substrait-go/v9@v9.x.y
-       go mod tidy
-
-3. Confirm the module is releasable, then tag it with its path prefix and push:
-
-       ./scripts/check-codec-release.sh
-       git tag codec/v0.1.0
-       git push origin codec/v0.1.0
-
-   `check-codec-release.sh` fails if codec/go.mod still pins a pre-release core
-   version or carries a replace directive, so a broken module never gets tagged.
-   It fails today on purpose: codec isn't releasable until step 2 points it at a
-   real core release.
-
-The `require` in `codec/go.mod` pins `v9.0.0-alpha.1` for now, the latest core
-tag, so the workspace resolves and CI builds. Before codec's first real release,
-step 2 has to point it at a core release that actually contains the proto removal
-from #280. `go.work` only affects this repo's local builds; consumers resolve the
-real `require`.
+The workflow then pushes the tag. The release commit lives only under the tag,
+so main is never written to. To cut one by hand, run the script and push the tag.

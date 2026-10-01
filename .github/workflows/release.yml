@@ -37,3 +37,21 @@ jobs:
           wget https://github.com/Nightapes/go-semantic-release/releases/download/v2.1.1/go-semantic-release.linux_x86_64.zip
           unzip go-semantic-release.linux_x86_64.zip
           ./go-semantic-release.linux_x86_64 release -l trace
+      - name: Install go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - name: Release codec
+        # codec is versioned in lockstep with core: tag codec/vX.Y.Z for every
+        # core release vX.Y.Z. The release commit lives only under the tag.
+        run: |
+          git fetch --tags --force
+          version=$(git tag --points-at HEAD --list 'v[0-9]*' | sort -V | tail -1)
+          if [ -z "$version" ]; then
+            echo "no core release at HEAD; skipping codec"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          ./scripts/release-codec.sh "$version"
+          git push origin "codec/$version"
