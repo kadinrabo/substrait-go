@@ -53,5 +53,5 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          ./scripts/release-codec.sh "$version"
+          bash scripts/release-codec.sh "$version"
           git push origin "codec/$version"
