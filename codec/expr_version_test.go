@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/substrait-io/substrait-go/codec"
+	"github.com/substrait-io/substrait-go/codec/v9"
 	ext "github.com/substrait-io/substrait-go/v9/extensions"
 	proto "github.com/substrait-io/substrait-protobuf/go/substraitpb"
 )
