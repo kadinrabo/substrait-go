@@ -17,8 +17,8 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-# go.work is committed: it ties the core and codec modules together for local
-# development (see codec/README.md). go.work.sum is machine-local, leave it out.
+# Go workspace file
+go.work
 go.work.sum
 
 # env file

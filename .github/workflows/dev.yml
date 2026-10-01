@@ -41,9 +41,6 @@ jobs:
         # decode lives in the codec module (issue #280).
         run: |
           set -euo pipefail
-          # a committed go.work adds codec (which holds the proto) to the
-          # workspace; check the core module as a consumer sees it
-          export GOWORK=off
           proto='github.com/substrait-io/substrait-protobuf'
           fail=0
           if go mod graph | grep -q "$proto"; then

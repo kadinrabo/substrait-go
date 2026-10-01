@@ -28,3 +28,8 @@ require (
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+// Builds against the core in this repo. Consumers ignore replace directives in
+// dependency modules, so this never reaches them; the release job pins the
+// require to the matching core tag (see codec/README.md).
+replace github.com/substrait-io/substrait-go/v9 => ../
