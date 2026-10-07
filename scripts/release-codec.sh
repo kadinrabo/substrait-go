@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Tag codec/vX.Y.Z for an existing core release vX.Y.Z (lockstep, #280). The
-# commit is made on a detached HEAD, so main keeps its dev setup; the caller
+# commit is made on a detached HEAD, so main keeps its dev replace; the caller
 # pushes the tag. Re-running an existing codec tag is a no-op.
 # Usage: ./scripts/release-codec.sh v9.1.0
 
@@ -24,12 +24,10 @@ git rev-parse -q --verify "refs/tags/codec/$version" >/dev/null && { echo "codec
 
 git checkout -q --detach "$version"
 
-# Pin core to the tag, then prove codec builds the way a consumer resolves it.
-# GOWORK=off ignores the dev go.work so core resolves from the tag, not this tree;
-# GOPROXY=direct because the core tag may be seconds old.
+# Pin core to the tag and drop the dev replace, then prove codec builds the way a
+# consumer resolves it. GOPROXY=direct because the core tag may be seconds old.
 (cd codec
-    export GOWORK=off
-    go mod edit -require="$core@$version"
+    go mod edit -require="$core@$version" -dropreplace="$core"
     GOPROXY=direct GOFLAGS=-mod=mod go mod tidy
     go build ./... && go test ./...)
 
