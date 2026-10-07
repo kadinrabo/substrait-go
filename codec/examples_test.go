@@ -14,7 +14,7 @@ import (
 	pb "google.golang.org/protobuf/proto"
 )
 
-func Example_scalarFunctionRoundTrip() {
+func ExampleExpression_scalarFunction() {
 	// define extensions with no plan for now
 	const planExt = `{
 		"extensionUrns": [
