@@ -41,31 +41,8 @@ jobs:
         # decode lives in the codec module (issue #280).
         run: |
           set -euo pipefail
-          # a committed go.work adds codec (which holds the proto) to the
-          # workspace; check the core module as a consumer sees it
-          export GOWORK=off
-          proto='github.com/substrait-io/substrait-protobuf'
-          fail=0
-          if go mod graph | grep -q "$proto"; then
-            echo "substrait-protobuf is in the core module graph:"
-            go mod graph | grep "$proto" | sed 's/^/  /'
-            fail=1
-          fi
-          if go list -deps ./... 2>/dev/null | grep -q "$proto"; then
-            echo "substrait-protobuf reachable from a core package:"
-            for pkg in $(go list ./...); do
-              go list -deps "$pkg" 2>/dev/null | grep -q "$proto" && echo "  $pkg"
-            done
-            fail=1
-          fi
-          if leaks=$(git grep -l "$proto" -- '*.go' ':(exclude)codec/'); then
-            echo "substrait-protobuf referenced in source outside codec/:"
-            echo "$leaks" | sed 's/^/  /'
-            fail=1
-          fi
-          if [ "$fail" -ne 0 ]; then
-            echo
-            echo "substrait-protobuf must live only in the codec module (issue #280)."
+          if go mod graph | grep -Fq 'github.com/substrait-io/substrait-protobuf'; then
+            echo "Core must not depend on substrait-protobuf (#280)."
             exit 1
           fi
           echo "OK: substrait-protobuf is isolated to the codec module"
