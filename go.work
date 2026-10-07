@@ -1,0 +1,10 @@
+// SPDX-License-Identifier: Apache-2.0
+
+// Wire core and codec together for local development so codec resolves core
+// from this tree. Releases build with GOWORK=off to resolve core from its tag.
+go 1.23.0
+
+use (
+	.
+	./codec
+)
